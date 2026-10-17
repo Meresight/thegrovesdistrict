@@ -1533,12 +1533,12 @@ export default function AdminPage() {
                       className="text-xs text-mute file:mr-3 file:rounded-xl file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
                     />
                     {(qrPreviewUrl || settings.paymentQrUrl) && (
-                      <div className="mt-3 flex items-center gap-3">
+                      <div className="mt-3 flex items-center gap-3.5">
                         <button
                           type="button"
                           onClick={() => setShowAdminQrModal(true)}
-                          className="group relative size-24 rounded-xl border border-line overflow-hidden bg-white p-1.5 hover:border-ink transition cursor-zoom-in"
-                          title="Click to enlarge QR code"
+                          className="relative size-24 rounded-xl border border-line overflow-hidden bg-white p-1.5 hover:border-ink transition cursor-pointer"
+                          aria-label="Expand QR preview"
                         >
                           <Image
                             src={qrPreviewUrl || settings.paymentQrUrl}
@@ -1548,16 +1548,17 @@ export default function AdminPage() {
                             className="object-contain p-1"
                           />
                         </button>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           <span className="text-xs text-ink font-medium block">
                             {qrPreviewUrl ? "New QR selected (Click Save Changes to publish)" : "Current active QR code"}
                           </span>
                           <button
                             type="button"
                             onClick={() => setShowAdminQrModal(true)}
-                            className="text-[11px] font-mono text-wine underline hover:opacity-80"
+                            className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink/80 hover:text-ink underline underline-offset-4 transition cursor-pointer"
                           >
-                            🔍 Click to Enlarge QR Code
+                            <span>Expand QR Preview</span>
+                            <span aria-hidden="true">↗</span>
                           </button>
                         </div>
                       </div>
@@ -2295,52 +2296,62 @@ export default function AdminPage() {
       {/* Enlargeable Payment QR Code Modal in Admin */}
       {showAdminQrModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => setShowAdminQrModal(false)}
         >
           <div
-            className="relative max-w-md w-full rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-line text-center space-y-4"
+            className="relative max-w-md w-full rounded-2xl bg-white shadow-2xl border border-line overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div className="text-left">
+            <div className="flex items-start justify-between p-5 border-b border-line bg-white">
+              <div>
                 <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-mute font-semibold">
                   Active Payment QR Code
                 </p>
-                <h3 className="text-lg font-bold text-ink">
+                <h3 className="text-lg font-semibold tracking-tight text-ink mt-0.5">
                   {settings.paymentAccountName}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAdminQrModal(false)}
-                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-sm text-ink transition"
+                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-ink transition cursor-pointer"
+                aria-label="Close QR Modal"
               >
-                ✕
+                <svg className="size-3.5 stroke-[1.75]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="relative mx-auto size-72 sm:size-80 rounded-2xl border border-line bg-white p-3 shadow-xs">
-              <Image
-                src={qrPreviewUrl || settings.paymentQrUrl}
-                alt="Enlarged Payment QR Code"
-                fill
-                unoptimized
-                className="object-contain p-2"
-              />
+            <div className="p-6 space-y-5 bg-white">
+              <div className="relative mx-auto size-72 sm:size-80 rounded-xl border border-line bg-white p-4">
+                <Image
+                  src={qrPreviewUrl || settings.paymentQrUrl}
+                  alt="Payment QR Code"
+                  fill
+                  unoptimized
+                  className="object-contain p-3"
+                />
+              </div>
+
+              <div className="border-y border-line py-2.5 flex items-center justify-between text-xs">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
+                  Account
+                </span>
+                <span className="font-mono font-medium text-ink">
+                  {settings.paymentAccountNumber}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAdminQrModal(false)}
+                className="w-full rounded-xl bg-ink py-2.5 text-xs font-semibold text-white hover:bg-black/85 transition text-center cursor-pointer"
+              >
+                Close Preview
+              </button>
             </div>
-
-            <p className="font-mono text-sm font-semibold text-ink">
-              {settings.paymentAccountNumber}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowAdminQrModal(false)}
-              className={`${btnPrimary} w-full py-2.5 text-xs`}
-            >
-              Close Preview
-            </button>
           </div>
         </div>
       )}

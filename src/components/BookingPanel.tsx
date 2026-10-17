@@ -899,44 +899,52 @@ export function BookingPanel() {
                     <span className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-mono text-mute">QR PH / INSTAPAY</span>
                   </div>
 
-                  <div className="flex flex-col items-center p-4 border border-line rounded-xl bg-white space-y-2.5">
+                  <div className="flex flex-col items-center p-5 border border-line rounded-xl bg-white space-y-3">
                     <button
                       type="button"
                       onClick={() => setShowQrModal(true)}
-                      className="group relative size-48 border border-line rounded-xl p-2 bg-white hover:border-ink transition cursor-zoom-in shadow-xs"
-                      title="Click to enlarge QR code"
+                      className="relative size-48 border border-line rounded-xl p-2.5 bg-white hover:border-ink transition cursor-pointer"
+                      aria-label="Expand payment QR code"
                     >
                       <Image
                         src={settings.paymentQrUrl}
                         alt="Payment QR"
                         fill
                         unoptimized
-                        className="object-contain p-1"
+                        className="object-contain p-1.5"
                       />
-                      <span className="absolute bottom-2 right-2 rounded-full bg-ink/85 text-white px-2.5 py-1 text-[10px] font-mono opacity-90 group-hover:opacity-100 transition shadow">
-                        🔍 Enlarge
-                      </span>
                     </button>
-                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+
+                    <div className="text-center space-y-0.5">
+                      <p className="font-semibold text-ink text-sm">{settings.paymentAccountName}</p>
+                      <p className="font-mono text-xs text-mute">{settings.paymentAccountNumber}</p>
+                    </div>
+
+                    <div className="w-full pt-3 border-t border-line flex items-center justify-center gap-6">
                       <button
                         type="button"
                         onClick={() => setShowQrModal(true)}
-                        className="rounded-full border border-line bg-zinc-50 hover:bg-zinc-100 hover:border-ink px-3 py-1 text-[11px] font-medium text-ink transition"
+                        className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink/80 hover:text-ink transition cursor-pointer"
                       >
-                        🔍 Tap to Enlarge QR Code
+                        <svg className="size-3.5 stroke-[1.6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                        <span>Expand QR</span>
                       </button>
+                      <span className="h-3 w-px bg-line" aria-hidden="true" />
                       <a
                         href={settings.paymentQrUrl}
                         download="grove-district-payment-qr.png"
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-full border border-line bg-zinc-50 hover:bg-zinc-100 hover:border-ink px-3 py-1 text-[11px] font-medium text-ink transition"
+                        className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-ink/80 hover:text-ink transition"
                       >
-                        ⬇ Save QR
+                        <svg className="size-3.5 stroke-[1.6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        <span>Download</span>
                       </a>
                     </div>
-                    <p className="font-semibold text-ink text-sm pt-0.5">{settings.paymentAccountName}</p>
-                    <p className="font-mono text-xs text-mute">{settings.paymentAccountNumber}</p>
                   </div>
 
                   {/* Red Warning Callout (from Velocity inspo) */}
@@ -1221,72 +1229,85 @@ export function BookingPanel() {
       {/* Full-Screen Payment QR Code Lightbox Modal */}
       {showQrModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => setShowQrModal(false)}
         >
           <div
-            className="relative max-w-md w-full rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-line text-center space-y-4"
+            className="relative max-w-md w-full rounded-2xl bg-white shadow-2xl border border-line overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div className="text-left">
+            {/* Header */}
+            <div className="flex items-start justify-between p-5 border-b border-line bg-white">
+              <div>
                 <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-mute font-semibold">
-                  Scan or Save to Pay
+                  InstaPay · QR Ph
                 </p>
-                <h3 className="text-lg font-bold text-ink">
+                <h3 className="text-lg font-semibold tracking-tight text-ink mt-0.5">
                   {settings.paymentAccountName}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowQrModal(false)}
-                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-sm text-ink transition"
+                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-ink transition cursor-pointer"
                 aria-label="Close QR Modal"
               >
-                ✕
+                <svg className="size-3.5 stroke-[1.75]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className="relative mx-auto size-72 sm:size-80 rounded-2xl border border-line bg-white p-3 shadow-xs">
-              <Image
-                src={settings.paymentQrUrl}
-                alt="Enlarged Payment QR Code"
-                fill
-                unoptimized
-                className="object-contain p-2"
-              />
-            </div>
+            {/* Body */}
+            <div className="p-6 space-y-5 bg-white">
+              <div className="relative mx-auto size-72 sm:size-80 rounded-xl border border-line bg-white p-4">
+                <Image
+                  src={settings.paymentQrUrl}
+                  alt="Payment QR Code"
+                  fill
+                  unoptimized
+                  className="object-contain p-3"
+                />
+              </div>
 
-            <div className="space-y-1">
-              <p className="font-mono text-sm font-semibold text-ink">
-                {settings.paymentAccountNumber}
-              </p>
-              <p className="text-xs text-mute">
-                Amount to Transfer:{" "}
-                <strong className="font-mono text-ink">
-                  {settings.currencySymbol}
-                  {finalTotal}
-                </strong>
-              </p>
-            </div>
+              <div className="border-y border-line divide-y divide-line text-xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
+                    Account
+                  </span>
+                  <span className="font-mono font-medium text-ink">
+                    {settings.paymentAccountNumber}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="font-mono text-[11px] uppercase tracking-wider text-mute">
+                    Amount Due
+                  </span>
+                  <span className="font-mono text-sm font-semibold text-ink">
+                    {settings.currencySymbol}
+                    {finalTotal}
+                  </span>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <a
-                href={settings.paymentQrUrl}
-                download="grove-district-payment-qr.png"
-                target="_blank"
-                rel="noreferrer"
-                className={`${btnGhost} py-2.5 text-xs`}
-              >
-                ⬇ Save / Download QR
-              </a>
-              <button
-                type="button"
-                onClick={() => setShowQrModal(false)}
-                className={`${btnPrimary} py-2.5 text-xs`}
-              >
-                Done Scanning
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <a
+                  href={settings.paymentQrUrl}
+                  download="grove-district-payment-qr.png"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-line bg-white py-2.5 text-xs font-semibold text-ink hover:bg-zinc-50 transition text-center"
+                >
+                  Save Image
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowQrModal(false)}
+                  className="rounded-xl bg-ink py-2.5 text-xs font-semibold text-white hover:bg-black/85 transition text-center cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
