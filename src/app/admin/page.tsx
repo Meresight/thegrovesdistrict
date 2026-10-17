@@ -4,7 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase-browser";
-import { booking, courts, site, type CourtId } from "@/lib/config";
+import {
+  booking,
+  courts,
+  site,
+  DEFAULT_EVENT_TYPES,
+  type CourtId,
+  type FacilityEventType,
+} from "@/lib/config";
 import { formatDateLabel, formatHour, nowInClubTz } from "@/lib/time";
 import { btnGhost, btnPrimary, eyebrow, input, label } from "@/components/ui";
 import {
@@ -15,6 +22,7 @@ import {
 } from "@/lib/waiver";
 
 const SLOTS = Array.from({ length: site.hours.close - site.hours.open }, (_, i) => site.hours.open + i);
+const ADMIN_SESSION_STORAGE_KEY = "grove_admin_session";
 
 type BookingRow = {
   id: string;
@@ -40,6 +48,7 @@ type ClubSettings = {
   offPeakHourlyRate?: number;
   memberDiscountPercent: number;
   eventHourlyRate: number;
+  eventTypes?: FacilityEventType[];
   currencySymbol: string;
   paymentAccountName: string;
   paymentAccountNumber: string;
@@ -101,12 +110,15 @@ export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [resendingRef, setResendingRef] = useState<string | null>(null);
   const [resendStatus, setResendStatus] = useState<Record<string, string>>({});
+  const [sendingSurveyRef, setSendingSurveyRef] = useState<string | null>(null);
+  const [surveyEmailStatus, setSurveyEmailStatus] = useState<Record<string, string>>({});
   const [copiedSurveyRef, setCopiedSurveyRef] = useState<string | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [surveys, setSurveys] = useState<AdminSurvey[]>([]);
   const [loadingSurveys, setLoadingSurveys] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
+  const [showAdminQrModal, setShowAdminQrModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Walk-in / Block Court modal state
@@ -137,6 +149,7 @@ export default function AdminPage() {
     offPeakHourlyRate: 450,
     memberDiscountPercent: 50,
     eventHourlyRate: 1800,
+    eventTypes: DEFAULT_EVENT_TYPES,
     currencySymbol: "₱",
     paymentAccountName: "Grove District",
     paymentAccountNumber: "09509979540 (GCash / Maya)",
@@ -152,17 +165,53 @@ export default function AdminPage() {
   const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
   const [showWaiverClauses, setShowWaiverClauses] = useState(false);
 
+  // Persist and restore admin session across page refreshes
   useEffect(() => {
+    let restoredFromStorage = false;
+    try {
+      const saved = window.localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.access_token && parsed?.user?.email) {
+          setSession(parsed);
+          restoredFromStorage = true;
+        }
+      }
+    } catch {}
+
     if (supabase) {
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) {
-          setSession({
+          const fresh = {
             access_token: data.session.access_token,
             user: { email: data.session.user.email || "" },
-          });
+          };
+          setSession(fresh);
+          try {
+            window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(fresh));
+          } catch {}
         }
         setLoading(false);
       });
+
+      const { data: sub } = supabase.auth.onAuthStateChange((_event, sbSession) => {
+        if (sbSession) {
+          const fresh = {
+            access_token: sbSession.access_token,
+            user: { email: sbSession.user.email || "" },
+          };
+          setSession(fresh);
+          try {
+            window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(fresh));
+          } catch {}
+        }
+      });
+
+      if (restoredFromStorage) {
+        setLoading(false);
+      }
+
+      return () => sub.subscription.unsubscribe();
     } else {
       setLoading(false);
     }
@@ -222,6 +271,7 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/bookings", {
         headers: { Authorization: `Bearer ${session?.access_token}` },
+        cache: "no-store",
       });
       const data = await res.json();
       if (data.bookings) setBookings(data.bookings);
@@ -231,12 +281,16 @@ export default function AdminPage() {
 
   async function loadSettings() {
     try {
-      const res = await fetch("/api/settings");
+      const res = await fetch(`/api/settings?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.settings) {
         setSettings((prev) => ({
           ...prev,
           ...data.settings,
+          eventTypes:
+            Array.isArray(data.settings.eventTypes) && data.settings.eventTypes.length > 0
+              ? data.settings.eventTypes
+              : DEFAULT_EVENT_TYPES,
           waiverText:
             data.settings.waiverText && data.settings.waiverText.includes("1. ")
               ? data.settings.waiverText
@@ -252,10 +306,14 @@ export default function AdminPage() {
 
     // Dev test account bypass
     if (email === "admin@grovedistrict.com" && password === "admin123456") {
-      setSession({
+      const devSession = {
         access_token: "dev-test-admin-token",
         user: { email: "admin@grovedistrict.com" },
-      });
+      };
+      try {
+        window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(devSession));
+      } catch {}
+      setSession(devSession);
       return;
     }
 
@@ -267,11 +325,23 @@ export default function AdminPage() {
     if (error) {
       setLoginError(error.message);
     } else if (data.session) {
-      setSession({
+      const nextSession = {
         access_token: data.session.access_token,
         user: { email: data.session.user.email || "" },
-      });
+      };
+      try {
+        window.localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify(nextSession));
+      } catch {}
+      setSession(nextSession);
     }
+  }
+
+  function handleLogout() {
+    try {
+      window.localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    } catch {}
+    supabase?.auth.signOut();
+    setSession(null);
   }
 
   async function updateBooking(
@@ -337,6 +407,37 @@ export default function AdminPage() {
       alert("Network error resending email");
     } finally {
       setResendingRef(null);
+    }
+  }
+
+  async function handleSendSurveyEmail(ref: string) {
+    setSendingSurveyRef(ref);
+    try {
+      const res = await fetch("/api/admin/bookings/resend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ bookingRef: ref, type: "survey" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setSurveyEmailStatus((prev) => ({ ...prev, [ref]: "sent" }));
+        setTimeout(() => {
+          setSurveyEmailStatus((prev) => {
+            const next = { ...prev };
+            delete next[ref];
+            return next;
+          });
+        }, 4000);
+      } else {
+        alert(data.error || "Failed to send post-game survey email");
+      }
+    } catch {
+      alert("Network error sending survey email");
+    } finally {
+      setSendingSurveyRef(null);
     }
   }
 
@@ -416,10 +517,11 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
-        setSettingsMsg("Settings saved successfully!");
+        setSettingsMsg("Settings saved! Live rates & QR updated across the entire website.");
         setSettings((prev) => ({ ...prev, paymentQrUrl: finalQrUrl }));
         setQrFile(null);
         setQrPreviewUrl(null);
+        await loadSettings();
       } else {
         setSettingsMsg("Error saving settings.");
       }
@@ -713,10 +815,7 @@ export default function AdminPage() {
               <p className="text-xs font-medium text-ink truncate">{session.user.email}</p>
             </div>
             <button
-              onClick={() => {
-                supabase?.auth.signOut();
-                setSession(null);
-              }}
+              onClick={handleLogout}
               className="text-xs text-rose-600 hover:underline font-semibold"
             >
               Log Out
@@ -742,6 +841,7 @@ export default function AdminPage() {
             <button
               onClick={() => {
                 loadBookings();
+                loadSettings();
                 loadSurveys();
               }}
               className={`${btnGhost} text-xs py-1.5 px-3`}
@@ -749,10 +849,7 @@ export default function AdminPage() {
               ↻ Refresh Live
             </button>
             <button
-              onClick={() => {
-                supabase?.auth.signOut();
-                setSession(null);
-              }}
+              onClick={handleLogout}
               className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition"
             >
               Log Out
@@ -1057,6 +1154,23 @@ export default function AdminPage() {
                                 <>
                                   <button
                                     type="button"
+                                    onClick={() => handleSendSurveyEmail(ref)}
+                                    disabled={sendingSurveyRef === ref}
+                                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                                      surveyEmailStatus[ref] === "sent"
+                                        ? "bg-amber-50 text-amber-800 border-amber-300"
+                                        : "border-amber-300 bg-amber-50/70 text-amber-950 hover:bg-amber-100 shadow-2xs"
+                                    }`}
+                                    title="Send post-game 5-star survey invitation email to player"
+                                  >
+                                    {sendingSurveyRef === ref
+                                      ? "Sending Survey…"
+                                      : surveyEmailStatus[ref] === "sent"
+                                      ? "✓ Survey Email Sent!"
+                                      : "★ Email Survey"}
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => {
                                       const shortRef = ref.slice(0, 8).toUpperCase();
                                       const surveyUrl = `${window.location.origin}/survey?ref=${shortRef}`;
@@ -1180,12 +1294,16 @@ export default function AdminPage() {
                     <p className="text-mute">Daily 8:00 AM – 2:00 AM (18 Hours)</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-50 border border-line space-y-1">
-                    <p className="font-semibold text-ink">Hourly Rates</p>
-                    <p className="text-mute">Off-Peak (8am–4pm): ₱450 · Peak: ₱550</p>
+                    <p className="font-semibold text-ink">Live Hourly Rates</p>
+                    <p className="text-mute">
+                      Off-Peak (8am–4pm): {settings.currencySymbol}{settings.offPeakHourlyRate ?? 450} · Peak: {settings.currencySymbol}{settings.regularHourlyRate}
+                    </p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-50 border border-line space-y-1">
                     <p className="font-semibold text-ink">Loyalty Mechanic</p>
-                    <p className="text-mute">50% discount after 10 games for up to 2 courts / 2 hours</p>
+                    <p className="text-mute">
+                      {settings.memberDiscountPercent}% discount after 10 games for up to 2 courts / 2 hours
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1198,7 +1316,7 @@ export default function AdminPage() {
               <div>
                 <h2 className="text-lg font-semibold text-ink">Live Rates & Payment Accounts</h2>
                 <p className="text-xs text-mute mt-0.5">
-                  Changes updated here reflect across the court booking schedule immediately.
+                  Changes updated here reflect across the homepage and court booking schedule immediately.
                 </p>
               </div>
 
@@ -1237,18 +1355,26 @@ export default function AdminPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className={label}>Full Facility Buyout Rate (All 3 Courts/Hour)</label>
+                    <label className={label}>Default Full Facility Buyout Rate (All 3 Courts/Hour)</label>
                     <input
                       type="number"
                       required
                       min={0}
                       className={input}
                       value={settings.eventHourlyRate}
-                      onChange={(e) =>
-                        setSettings({ ...settings, eventHourlyRate: Number(e.target.value) })
-                      }
+                      onChange={(e) => {
+                        const nextRate = Number(e.target.value);
+                        const currentEvents = settings.eventTypes ?? DEFAULT_EVENT_TYPES;
+                        setSettings({
+                          ...settings,
+                          eventHourlyRate: nextRate,
+                          eventTypes: currentEvents.map((ev, idx) =>
+                            idx === 0 ? { ...ev, hourlyRate: nextRate } : ev
+                          ),
+                        });
+                      }}
                     />
-                    <span className="text-[10px] text-mute">Rate per hour when booking all 3 courts together (default ₱1,800).</span>
+                    <span className="text-[10px] text-mute">Base rate per hour when booking all 3 courts together (default ₱1,800).</span>
                   </div>
 
                   <div>
@@ -1265,6 +1391,68 @@ export default function AdminPage() {
                       }
                     />
                     <span className="text-[10px] text-mute">Applies to up to 2 court-hours (2 courts / 2 hrs) after every 10 games (50% off).</span>
+                  </div>
+                </div>
+
+                {/* Full Facility Event & Tournament Packages (Editable by Owner anytime) */}
+                <div className="border-t border-line pt-5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-ink">
+                        Full Facility Event & Tournament Rates (All 3 Courts / Hour)
+                      </h3>
+                      <p className="text-[11px] text-mute">
+                        When a customer clicks <strong>Full Facility</strong> on the booking page, they choose one of these event or tournament packages and the hourly rate adjusts automatically. You can change these names and prices anytime.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {(settings.eventTypes ?? DEFAULT_EVENT_TYPES).map((evt, idx) => (
+                      <div
+                        key={evt.id}
+                        className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3 rounded-xl border border-line bg-zinc-50/70 p-3 items-center"
+                      >
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-mute block">
+                            Package {idx + 1} Name
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            className={input}
+                            value={evt.label}
+                            onChange={(e) => {
+                              const list = [...(settings.eventTypes ?? DEFAULT_EVENT_TYPES)];
+                              list[idx] = { ...list[idx], label: e.target.value };
+                              setSettings({ ...settings, eventTypes: list });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-mute block">
+                            Rate ({settings.currencySymbol}/Hr)
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            className={input}
+                            value={evt.hourlyRate}
+                            onChange={(e) => {
+                              const rate = Number(e.target.value);
+                              const list = [...(settings.eventTypes ?? DEFAULT_EVENT_TYPES)];
+                              list[idx] = { ...list[idx], hourlyRate: rate };
+                              setSettings({
+                                ...settings,
+                                eventHourlyRate: idx === 0 ? rate : settings.eventHourlyRate,
+                                eventTypes: list,
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1346,18 +1534,32 @@ export default function AdminPage() {
                     />
                     {(qrPreviewUrl || settings.paymentQrUrl) && (
                       <div className="mt-3 flex items-center gap-3">
-                        <div className="relative size-20 rounded-xl border border-line overflow-hidden bg-white p-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminQrModal(true)}
+                          className="group relative size-24 rounded-xl border border-line overflow-hidden bg-white p-1.5 hover:border-ink transition cursor-zoom-in"
+                          title="Click to enlarge QR code"
+                        >
                           <Image
                             src={qrPreviewUrl || settings.paymentQrUrl}
                             alt="Payment QR"
                             fill
                             unoptimized
-                            className="object-contain"
+                            className="object-contain p-1"
                           />
+                        </button>
+                        <div className="space-y-1">
+                          <span className="text-xs text-ink font-medium block">
+                            {qrPreviewUrl ? "New QR selected (Click Save Changes to publish)" : "Current active QR code"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAdminQrModal(true)}
+                            className="text-[11px] font-mono text-wine underline hover:opacity-80"
+                          >
+                            🔍 Click to Enlarge QR Code
+                          </button>
                         </div>
-                        <span className="text-xs text-mute font-mono">
-                          {qrPreviewUrl ? "New QR selected (Click Save Changes to publish)" : "Current active QR code"}
-                        </span>
                       </div>
                     )}
                   </div>
@@ -2089,6 +2291,59 @@ export default function AdminPage() {
           </div>
         );
       })()}
+
+      {/* Enlargeable Payment QR Code Modal in Admin */}
+      {showAdminQrModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setShowAdminQrModal(false)}
+        >
+          <div
+            className="relative max-w-md w-full rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-line text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="text-left">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-mute font-semibold">
+                  Active Payment QR Code
+                </p>
+                <h3 className="text-lg font-bold text-ink">
+                  {settings.paymentAccountName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdminQrModal(false)}
+                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-sm text-ink transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative mx-auto size-72 sm:size-80 rounded-2xl border border-line bg-white p-3 shadow-xs">
+              <Image
+                src={qrPreviewUrl || settings.paymentQrUrl}
+                alt="Enlarged Payment QR Code"
+                fill
+                unoptimized
+                className="object-contain p-2"
+              />
+            </div>
+
+            <p className="font-mono text-sm font-semibold text-ink">
+              {settings.paymentAccountNumber}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowAdminQrModal(false)}
+              className={`${btnPrimary} w-full py-2.5 text-xs`}
+            >
+              Close Preview
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -47,6 +47,40 @@ export const booking = {
   currencySymbol: "₱",
 } as const;
 
+export type FacilityEventType = {
+  id: string;
+  label: string;
+  hourlyRate: number;
+  description?: string;
+};
+
+export const DEFAULT_EVENT_TYPES: FacilityEventType[] = [
+  {
+    id: "private_buyout",
+    label: "Private Play / Facility Buyout",
+    hourlyRate: 1800,
+    description: "All 3 indoor courts reserved exclusively for your group",
+  },
+  {
+    id: "tournament",
+    label: "Tournament / Pickleball Cup",
+    hourlyRate: 2200,
+    description: "Competitive tournament play across all 3 courts",
+  },
+  {
+    id: "corporate",
+    label: "Corporate / Team Building Event",
+    hourlyRate: 2500,
+    description: "Company sports day, mixer, or private facility buyout",
+  },
+  {
+    id: "celebration",
+    label: "Birthday / Private Celebration",
+    hourlyRate: 2000,
+    description: "Private celebration with all 3 courts reserved",
+  },
+];
+
 export const skillLevels = ["Beginner", "Intermediate", "Advanced", "Not sure yet"] as const;
 
 export const faqs = [

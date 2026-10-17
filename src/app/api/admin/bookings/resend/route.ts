@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { json, notConfigured, tooMany } from "@/lib/api";
 import { clientIp, createLimiter, rateLimitHeaders } from "@/lib/ratelimit";
 import { getAdminClient } from "@/lib/supabase-admin";
-import { sendBookingNotifications } from "@/lib/email";
+import { sendBookingNotifications, sendPostGameSurveyEmail } from "@/lib/email";
 import { courts } from "@/lib/config";
 import { formatHour } from "@/lib/time";
 
@@ -69,6 +69,18 @@ export async function POST(req: NextRequest) {
     ? "Whole Facility Buyout (All Courts)"
     : courts.find((c) => c.id === first.court_id)?.name || first.court_id;
   const hoursFormatted = rows.map((r) => formatHour(r.start_hour)).join(", ");
+
+  if (body.type === "survey") {
+    const res = await sendPostGameSurveyEmail({
+      ref: first.booking_ref,
+      name: first.name,
+      email: first.email,
+      date: first.play_date,
+      hours: hoursFormatted,
+      courtDisplay,
+    });
+    return json({ ok: true, emailSuccess: res.success });
+  }
 
   const { data: settings } = await db.from("club_settings").select("owner_notification_email").eq("id", 1).single();
 

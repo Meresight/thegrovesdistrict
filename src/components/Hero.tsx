@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { site } from "@/lib/config";
+import { useClubSettings } from "@/lib/useClubSettings";
 import { btnGhost, btnPrimary, pill } from "./ui";
 
 const photos = [
@@ -21,9 +23,9 @@ const photos = [
   },
 ];
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 export function Hero() {
+  const settings = useClubSettings();
+
   return (
     <section>
       {/* 2-Column Balanced Hero */}
@@ -56,16 +58,22 @@ export function Hero() {
               Book a Court →
             </Link>
             <a href="#ways-to-play" className={`${btnGhost} px-6 py-3 text-sm`}>
-              Ways to Play
+              Ways to Play & Member Perks
             </a>
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-mute font-mono">
             <span>8:00 AM – 2:00 AM</span>
             <span className="text-zinc-300">·</span>
-            <span>₱450 Off-Peak / ₱550 Peak</span>
+            <span>
+              {settings.currencySymbol}
+              {settings.offPeakHourlyRate} Off-Peak / {settings.currencySymbol}
+              {settings.regularHourlyRate} Peak
+            </span>
             <span className="text-zinc-300">·</span>
-            <span className="text-ink font-medium">50% Off Every 10 Games</span>
+            <span className="text-ink font-medium">
+              {settings.memberDiscountPercent}% Off 2 Courts / 2 Hrs Every 10 Games
+            </span>
           </div>
         </div>
       </div>

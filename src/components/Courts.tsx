@@ -1,9 +1,13 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
 import { courts } from "@/lib/config";
+import { useClubSettings } from "@/lib/useClubSettings";
 import { btnPrimary, eyebrow } from "./ui";
 
 export function Courts() {
+  const settings = useClubSettings();
+
   return (
     <section id="courts" className="scroll-mt-16 border-t border-line">
       <div className="grid md:grid-cols-[1fr_2.2fr]">
@@ -34,7 +38,11 @@ export function Courts() {
                 <p className="mt-1 text-xs text-mute">{c.note}</p>
                 <div className="mt-4 pt-3 border-t border-line/60 flex justify-between items-baseline text-xs">
                   <span className="text-mute font-mono text-[11px]">Rate</span>
-                  <span className="font-mono font-semibold text-ink">₱450 – ₱550/hr</span>
+                  <span className="font-mono font-semibold text-ink">
+                    {settings.currencySymbol}
+                    {settings.offPeakHourlyRate} – {settings.currencySymbol}
+                    {settings.regularHourlyRate}/hr
+                  </span>
                 </div>
               </div>
             ))}

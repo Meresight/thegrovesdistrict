@@ -1,13 +1,22 @@
+"use client";
+
+import { useClubSettings } from "@/lib/useClubSettings";
 import { eyebrow } from "./ui";
 
-const stats = [
-  { n: "03", l: "Indoor Tournament Courts", sub: "Cushioned acrylic surface" },
-  { n: "18 hrs", l: "Open Daily (8AM – 2AM)", sub: "Off-peak ₱450 · Peak ₱550" },
-  { n: "100%", l: "Indoor & Weatherproof", sub: "No rainouts, zero sun glare" },
-  { n: "01", l: "Courtside Café", sub: "Specialty coffee & refreshers" },
-];
-
 export function About() {
+  const settings = useClubSettings();
+
+  const stats = [
+    { n: "03", l: "Indoor Tournament Courts", sub: "Cushioned acrylic surface" },
+    {
+      n: "18 hrs",
+      l: "Open Daily (8AM – 2AM)",
+      sub: `Off-peak ${settings.currencySymbol}${settings.offPeakHourlyRate} · Peak ${settings.currencySymbol}${settings.regularHourlyRate}`,
+    },
+    { n: "100%", l: "Indoor & Weatherproof", sub: "No rainouts, zero sun glare" },
+    { n: "01", l: "Courtside Café", sub: "Specialty coffee & refreshers" },
+  ];
+
   return (
     <section id="about" className="scroll-mt-16 border-t border-line">
       <div className="grid md:grid-cols-[1fr_2.2fr]">

@@ -283,3 +283,79 @@ export async function sendPasswordResetEmail(
     return { success: false, error: err?.message };
   }
 }
+
+/**
+ * Sends a dedicated post-game 5-star survey invitation email to the player after their game finishes.
+ */
+export async function sendPostGameSurveyEmail(booking: {
+  ref: string;
+  name: string;
+  email: string;
+  date: string;
+  hours: string;
+  courtDisplay: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const resend = getResend();
+  if (!resend) {
+    console.log(
+      `[EMAIL NOTICE] RESEND_API_KEY not set. Post-game survey email for #${booking.ref.slice(0, 8)} skipped.`
+    );
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "Grove District <onboarding@resend.dev>";
+  const shortRef = booking.ref.slice(0, 8).toUpperCase();
+  const surveyUrl = `${site.url}/survey?ref=${shortRef}`;
+
+  try {
+    const res = await resend.emails.send({
+      from: fromEmail,
+      to: booking.email,
+      subject: `How was your game at Grove District? ★ Rate Booking #${shortRef}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #18181b;">
+          <div style="border-bottom: 2px solid #18181b; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="margin: 0; font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #18181b;">
+              Grove District
+            </h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #71717a; text-transform: uppercase; letter-spacing: 0.15em;">
+              Pickleball · Café · Cebu
+            </p>
+          </div>
+
+          <h2 style="font-size: 18px; margin: 0 0 8px 0; color: #18181b;">
+            Thanks for playing with us, ${booking.name}! ★
+          </h2>
+          <p style="font-size: 14px; line-height: 1.6; color: #52525b; margin: 0 0 20px 0;">
+            We hope you had a great session on <strong>${booking.courtDisplay}</strong> (${booking.date} · ${booking.hours}). Take 30 seconds to rate our hospitality, courts, and café &amp; food:
+          </p>
+
+          <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 14px; padding: 22px; margin-bottom: 24px; text-align: center;">
+            <p style="margin: 0 0 6px 0; font-size: 18px; letter-spacing: 4px; color: #f59e0b;">★★★★★</p>
+            <p style="margin: 0 0 14px 0; font-size: 13px; color: #78350f; font-weight: 600;">
+              Rate Hospitality · Court Quality · Café &amp; Food
+            </p>
+            <a href="${surveyUrl}" style="display: inline-block; background: #18181b; color: #ffffff; padding: 12px 26px; font-size: 13px; font-weight: 600; text-decoration: none; border-radius: 9999px;">
+              Submit Your 5-Star Review (#${shortRef}) →
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 24px 0 0 0;">
+            Grove District · <a href="${site.mapsUrl}" style="color: #52525b; text-decoration: underline;">Get Directions on Google Maps ↗</a> · ${site.phone}
+          </p>
+        </div>
+      `,
+    });
+
+    if (res.error) {
+      console.log("[resend] Survey email notice:", res.error.message);
+      return { success: false, error: res.error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("[resend] Survey email error:", err?.message || err);
+    return { success: false, error: err?.message };
+  }
+}
+

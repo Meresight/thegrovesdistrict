@@ -97,11 +97,14 @@ async function saveSurveys(
 
   const { error } = await db
     .from("club_settings")
-    .update({
-      waiver_text: nextPayload,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", 1);
+    .upsert(
+      {
+        id: 1,
+        waiver_text: nextPayload,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
 
   return error;
 }

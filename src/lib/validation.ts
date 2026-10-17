@@ -13,6 +13,7 @@ const honeypot = z.string().max(0).optional();
 
 export const bookingSchema = z.object({
   bookingType: z.enum(["single", "event_buyout"]).default("single"),
+  eventTypeId: z.string().trim().max(80).optional(),
   courtId: z.enum(COURT_IDS),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hours: z.array(z.number().int().min(0).max(25)).min(1),
@@ -26,7 +27,7 @@ export const bookingSchema = z.object({
   phone,
   players: z.number().int().min(1).default(4).optional(),
   notes: z.string().trim().max(300).optional(),
-  receiptUrl: z.string().trim().url().optional().or(z.literal("")),
+  receiptUrl: z.string().trim().optional().or(z.literal("")),
   waiverAgreed: z.boolean().default(true),
   website: honeypot,
 });

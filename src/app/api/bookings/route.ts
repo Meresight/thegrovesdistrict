@@ -61,11 +61,42 @@ export async function POST(req: NextRequest) {
     .from("club_settings")
     .select("*")
     .eq("id", 1)
-    .single();
+    .maybeSingle();
 
-  const regRate = Number(settingsData?.regular_hourly_rate ?? booking.defaultRegularRate);
-  const eventRate = Number(settingsData?.event_hourly_rate ?? booking.defaultEventRate);
-  const discountPct = Number(settingsData?.member_discount_percent ?? booking.defaultMemberDiscountPercent);
+  let extra: { offPeakRate?: number; eventTypes?: { id: string; label: string; hourlyRate: number }[] } = {};
+  if (settingsData?.waiver_text && settingsData.waiver_text.trim().startsWith("{")) {
+    try {
+      extra = JSON.parse(settingsData.waiver_text);
+    } catch {}
+  }
+
+  const peakRate = Number(settingsData?.regular_hourly_rate ?? booking.defaultPeakRate);
+  const offPeakRate =
+    extra.offPeakRate !== undefined ? Number(extra.offPeakRate) : booking.defaultOffPeakRate;
+  const baseEventRate = Number(settingsData?.event_hourly_rate ?? booking.defaultEventRate);
+  const discountPct = Number(
+    settingsData?.member_discount_percent ?? booking.defaultMemberDiscountPercent
+  );
+
+  let activeEventRate = baseEventRate;
+  let activeEventLabel = "Full Facility Buyout";
+  if (isEvent) {
+    const configuredTypes = Array.isArray(extra.eventTypes) ? extra.eventTypes : [];
+    const matched = configuredTypes.find((et) => et.id === input.eventTypeId);
+    if (matched) {
+      activeEventRate = Number(matched.hourlyRate) || baseEventRate;
+      activeEventLabel = matched.label;
+    } else if (input.eventTypeId === "tournament") {
+      activeEventRate = 2200;
+      activeEventLabel = "Tournament / Pickleball Cup";
+    } else if (input.eventTypeId === "corporate") {
+      activeEventRate = 2500;
+      activeEventLabel = "Corporate / Team Building Event";
+    } else if (input.eventTypeId === "celebration") {
+      activeEventRate = 2000;
+      activeEventLabel = "Birthday / Private Celebration";
+    }
+  }
 
   // 2. Membership comes ONLY from a valid login token. Typing a member's email as a guest
   //    must never unlock member perks.
@@ -102,8 +133,8 @@ export async function POST(req: NextRequest) {
     confirmedGames = confirmedSlotsCount;
   }
 
-  // Price calculation: Off-peak (8am-4pm) = ₱450, Peak (4pm-2am) = ₱550
-  const slotRate = (h: number) => (h >= 8 && h < 16 ? booking.defaultOffPeakRate : booking.defaultPeakRate);
+  // Price calculation: Uses live Off-Peak (8am-4pm) and Peak (4pm-2am) rates from Admin settings
+  const slotRate = (h: number) => (h >= 8 && h < 16 ? offPeakRate : peakRate);
 
   // Reward applies to up to TWO court-hour slots (2 courts for 1 hr or 1 court for 2 hrs),
   // never whole-facility buyouts, and only one reward can be pending at a time.
@@ -111,7 +142,7 @@ export async function POST(req: NextRequest) {
     isMember && qualifiesForLoyaltyReward(confirmedGames) && !hasPendingReward && !isEvent && slotList.length > 0;
 
   const rawTotal = isEvent
-    ? eventRate * hours.length
+    ? activeEventRate * hours.length
     : slotList.reduce((sum, s) => sum + slotRate(s.hour), 0);
 
   // Discount applies to up to 2 court-hour slots (2 courts / 2 hours)
@@ -126,6 +157,10 @@ export async function POST(req: NextRequest) {
     ? courts.flatMap((c) => hours.map((h) => ({ courtId: c.id, hour: h })))
     : slotList;
 
+  const finalNotes = isEvent
+    ? `[Event: ${activeEventLabel}]${input.notes ? ` ${input.notes}` : ""}`
+    : input.notes || null;
+
   const rows = bookedSlots.map((s) => ({
     booking_ref: ref,
     booking_type: input.bookingType,
@@ -137,7 +172,7 @@ export async function POST(req: NextRequest) {
     email: input.email,
     phone: input.phone,
     players: input.players ?? 4,
-    notes: input.notes || null,
+    notes: finalNotes,
     total_price: finalTotal,
     discount_applied: discountAmount,
     receipt_url: input.receiptUrl || null,

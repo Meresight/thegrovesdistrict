@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { booking, courts, site, type CourtId } from "@/lib/config";
+import {
+  booking,
+  courts,
+  DEFAULT_EVENT_TYPES,
+  site,
+  type CourtId,
+  type FacilityEventType,
+} from "@/lib/config";
 import { addDays, endOfMonth, formatDateLabel, formatHour, nowInClubTz } from "@/lib/time";
 import { supabase } from "@/lib/supabase-browser";
 import { getMemberToken, useMember } from "@/lib/use-member";
@@ -23,6 +30,7 @@ type ClubSettings = {
   offPeakHourlyRate?: number;
   memberDiscountPercent: number;
   eventHourlyRate: number;
+  eventTypes?: FacilityEventType[];
   currencySymbol: string;
   paymentAccountName: string;
   paymentAccountNumber: string;
@@ -36,6 +44,7 @@ export function BookingPanel() {
   const [now, setNow] = useState<{ date: string; hour: number }>(initialNow);
   const [date, setDate] = useState(initialNow.date);
   const [bookingType, setBookingType] = useState<"single" | "event_buyout">("single");
+  const [selectedEventTypeId, setSelectedEventTypeId] = useState<string>(DEFAULT_EVENT_TYPES[0].id);
   const [selectedSlots, setSelectedSlots] = useState<SelectedSlot[]>([]);
   const [booked, setBooked] = useState<Booked | null>(null);
   const [pending, setPending] = useState<Booked | null>(null);
@@ -51,6 +60,7 @@ export function BookingPanel() {
     offPeakHourlyRate: booking.defaultOffPeakRate,
     memberDiscountPercent: booking.defaultMemberDiscountPercent,
     eventHourlyRate: booking.defaultEventRate,
+    eventTypes: DEFAULT_EVENT_TYPES,
     currencySymbol: booking.currencySymbol,
     paymentAccountName: "Grove District",
     paymentAccountNumber: "09509979540 (GCash / Maya)",
@@ -70,6 +80,7 @@ export function BookingPanel() {
   const [modalWaiverChecked, setModalWaiverChecked] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [showWaiverModal, setShowWaiverModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
@@ -79,12 +90,25 @@ export function BookingPanel() {
     setNow(n);
     setDate(n.date);
 
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.settings) setSettings(d.settings);
-      })
-      .catch(() => {});
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "event") {
+        setBookingType("event_buyout");
+      }
+    }
+
+    function loadFreshSettings() {
+      fetch(`/api/settings?t=${Date.now()}`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.settings) setSettings(d.settings);
+        })
+        .catch(() => {});
+    }
+
+    loadFreshSettings();
+    window.addEventListener("focus", loadFreshSettings);
+    return () => window.removeEventListener("focus", loadFreshSettings);
   }, []);
 
   // Loyalty progress comes from the server (bookings are locked by RLS for browsers).
@@ -188,11 +212,19 @@ export function BookingPanel() {
     return h >= 8 && h < 16 ? offPeak : peak;
   }
 
-  // Price calculations
+  // Price calculations & Event/Tournament types
+  const eventTypesList =
+    settings.eventTypes && settings.eventTypes.length > 0
+      ? settings.eventTypes
+      : DEFAULT_EVENT_TYPES;
+  const selectedEventType =
+    eventTypesList.find((e) => e.id === selectedEventTypeId) ?? eventTypesList[0];
+  const activeEventHourlyRate = selectedEventType?.hourlyRate ?? settings.eventHourlyRate;
+
   const distinctHours = Array.from(new Set(selectedSlots.map((s) => s.hour))).sort((a, b) => a - b);
   const isEvent = bookingType === "event_buyout";
   const rawTotal = isEvent
-    ? settings.eventHourlyRate * distinctHours.length
+    ? activeEventHourlyRate * distinctHours.length
     : selectedSlots.reduce((sum, s) => sum + getSlotRate(s.hour), 0);
 
   // Loyalty reward: after every 10 confirmed games the next booking gets 50% off up to TWO court-hours (2 courts or 2 hours).
@@ -208,7 +240,7 @@ export function BookingPanel() {
 
   const summary = selectedSlots.length
     ? isEvent
-      ? `Full Facility Buyout (All Courts) · ${formatDateLabel(date)} · ${distinctHours.map((h) => formatHour(h)).join(", ")}`
+      ? `${selectedEventType?.label ?? "Full Facility"} (All 3 Courts) · ${formatDateLabel(date)} · ${distinctHours.map((h) => formatHour(h)).join(", ")}`
       : `${selectedSlots.map((s) => `${courts.find((c) => c.id === s.courtId)?.name} (${formatHour(s.hour)})`).join(", ")} · ${formatDateLabel(date)}`
     : null;
 
@@ -266,6 +298,7 @@ export function BookingPanel() {
         headers,
         body: JSON.stringify({
           bookingType,
+          eventTypeId: isEvent ? selectedEventType?.id : undefined,
           courtId: selectedSlots[0].courtId,
           date,
           hours: distinctHours,
@@ -412,7 +445,7 @@ export function BookingPanel() {
             />
 
             {/* Booking Type Selector */}
-            <div className="pt-3 border-t border-line space-y-2">
+            <div className="pt-3 border-t border-line space-y-2.5">
               <p className={eyebrow}>Reservation Mode</p>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -447,8 +480,62 @@ export function BookingPanel() {
               <p className="text-[11px] text-mute leading-relaxed">
                 {bookingType === "single"
                   ? "Book any open court (Court 1, 2, or 3) for recreation or match play."
-                  : "Private event: locks all 3 courts together for your group/tournament."}
+                  : "Private event or tournament: locks all 3 courts together for your group."}
               </p>
+
+              {/* Event / Tournament Package Selector when Full Facility is active */}
+              {bookingType === "event_buyout" && (
+                <div className="pt-2 space-y-2 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-ink font-semibold">
+                      Select Event / Tournament Type
+                    </p>
+                    <span className="text-[10px] font-mono text-wine font-semibold">
+                      All 3 Courts
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {eventTypesList.map((evt) => {
+                      const active = selectedEventType?.id === evt.id;
+                      return (
+                        <button
+                          key={evt.id}
+                          type="button"
+                          onClick={() => setSelectedEventTypeId(evt.id)}
+                          className={`w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between gap-2 ${
+                            active
+                              ? "border-ink bg-ink text-white shadow-sm"
+                              : "border-line bg-zinc-50/80 text-ink hover:border-ink/50"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold truncate">{evt.label}</p>
+                            {evt.description && (
+                              <p
+                                className={`text-[10px] truncate ${
+                                  active ? "text-white/75" : "text-mute"
+                                }`}
+                              >
+                                {evt.description}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className={`shrink-0 font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                              active
+                                ? "bg-white/15 text-white"
+                                : "bg-white border border-line text-ink"
+                            }`}
+                          >
+                            {settings.currencySymbol}
+                            {evt.hourlyRate}/hr
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -463,12 +550,22 @@ export function BookingPanel() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-mute">
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full border border-emerald-500 bg-emerald-100" /> 8am–4pm: {settings.currencySymbol}{settings.offPeakHourlyRate ?? booking.defaultOffPeakRate}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full border border-amber-500 bg-amber-100" /> 4pm–2am: {settings.currencySymbol}{settings.regularHourlyRate ?? booking.defaultPeakRate}
-                </span>
+                {isEvent ? (
+                  <span className="flex items-center gap-1.5 font-medium text-ink bg-zinc-100 px-2.5 py-1 rounded-full">
+                    <span className="size-2 rounded-full bg-wine" />
+                    {selectedEventType?.label}: {settings.currencySymbol}
+                    {activeEventHourlyRate}/hr (All 3 Courts)
+                  </span>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1">
+                      <span className="size-2 rounded-full border border-emerald-500 bg-emerald-100" /> 8am–4pm: {settings.currencySymbol}{settings.offPeakHourlyRate ?? booking.defaultOffPeakRate}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="size-2 rounded-full border border-amber-500 bg-amber-100" /> 4pm–2am: {settings.currencySymbol}{settings.regularHourlyRate ?? booking.defaultPeakRate}
+                    </span>
+                  </>
+                )}
                 <span className="flex items-center gap-1">
                   <span className="size-2 rounded-full bg-ink" /> Selected
                 </span>
@@ -519,7 +616,7 @@ export function BookingPanel() {
                           const disabled = isHourPast || isBooked;
 
                           const cellPrice = isEvent
-                            ? Math.round(settings.eventHourlyRate / 3)
+                            ? Math.round(activeEventHourlyRate / 3)
                             : getSlotRate(h);
 
                           const isOffPeak = h >= 8 && h < 16;
@@ -585,7 +682,7 @@ export function BookingPanel() {
                   <div className="rounded-xl border border-line p-3 bg-zinc-50 space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-ink">
-                        {isEvent ? "Whole Facility Buyout" : "Selected Courts"}
+                        {isEvent ? selectedEventType?.label ?? "Full Facility Buyout" : "Selected Courts"}
                       </span>
                       <span className="text-mute">{formatDateLabel(date)}</span>
                     </div>
@@ -606,7 +703,11 @@ export function BookingPanel() {
                   {/* Price breakdown */}
                   <div className="pt-2 space-y-1.5 text-xs text-mute border-t border-line">
                     <div className="flex justify-between">
-                      <span>Court Rate ({selectedSlots.length} slot{selectedSlots.length > 1 ? "s" : ""})</span>
+                      <span>
+                        {isEvent
+                          ? `${selectedEventType?.label} (${distinctHours.length} hr${distinctHours.length > 1 ? "s" : ""})`
+                          : `Court Rate (${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""})`}
+                      </span>
                       <span className="font-mono text-ink">{settings.currencySymbol}{rawTotal}</span>
                     </div>
 
@@ -745,11 +846,18 @@ export function BookingPanel() {
                     <span className="font-semibold text-ink">{formatDateLabel(date, { weekday: "long", month: "long", day: "numeric" })}</span>
                   </div>
 
+                  {isEvent && (
+                    <div className="flex justify-between text-xs pb-2 border-b border-line">
+                      <span className="text-mute">Event Package</span>
+                      <span className="font-semibold text-wine">{selectedEventType?.label}</span>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5 pt-1">
                     {selectedSlots.map((s, idx) => (
                       <div key={idx} className="flex justify-between text-xs">
                         <span className="text-mute">
-                          {isEvent ? "Whole Facility" : courts.find((c) => c.id === s.courtId)?.name} · {formatHour(s.hour)}
+                          {isEvent ? `Full Facility (${courts.find((c) => c.id === s.courtId)?.name})` : courts.find((c) => c.id === s.courtId)?.name} · {formatHour(s.hour)}
                           {!isEvent && (
                             <span className="text-[10px] text-zinc-400 ml-1.5">
                               ({s.hour >= 8 && s.hour < 16 ? "Off-Peak" : "Peak"})
@@ -757,7 +865,7 @@ export function BookingPanel() {
                           )}
                         </span>
                         <span className="font-mono text-ink">
-                          {settings.currencySymbol}{isEvent ? Math.round(settings.eventHourlyRate / 3) : getSlotRate(s.hour)}
+                          {settings.currencySymbol}{isEvent ? Math.round(activeEventHourlyRate / 3) : getSlotRate(s.hour)}
                         </span>
                       </div>
                     ))}
@@ -791,17 +899,43 @@ export function BookingPanel() {
                     <span className="rounded bg-zinc-100 px-2 py-0.5 text-[10px] font-mono text-mute">QR PH / INSTAPAY</span>
                   </div>
 
-                  <div className="flex flex-col items-center p-4 border border-line rounded-xl bg-white space-y-2">
-                    <div className="relative size-44 border border-line rounded-lg p-2 bg-white">
+                  <div className="flex flex-col items-center p-4 border border-line rounded-xl bg-white space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowQrModal(true)}
+                      className="group relative size-48 border border-line rounded-xl p-2 bg-white hover:border-ink transition cursor-zoom-in shadow-xs"
+                      title="Click to enlarge QR code"
+                    >
                       <Image
                         src={settings.paymentQrUrl}
                         alt="Payment QR"
                         fill
                         unoptimized
-                        className="object-contain"
+                        className="object-contain p-1"
                       />
+                      <span className="absolute bottom-2 right-2 rounded-full bg-ink/85 text-white px-2.5 py-1 text-[10px] font-mono opacity-90 group-hover:opacity-100 transition shadow">
+                        🔍 Enlarge
+                      </span>
+                    </button>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowQrModal(true)}
+                        className="rounded-full border border-line bg-zinc-50 hover:bg-zinc-100 hover:border-ink px-3 py-1 text-[11px] font-medium text-ink transition"
+                      >
+                        🔍 Tap to Enlarge QR Code
+                      </button>
+                      <a
+                        href={settings.paymentQrUrl}
+                        download="grove-district-payment-qr.png"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-line bg-zinc-50 hover:bg-zinc-100 hover:border-ink px-3 py-1 text-[11px] font-medium text-ink transition"
+                      >
+                        ⬇ Save QR
+                      </a>
                     </div>
-                    <p className="font-semibold text-ink text-sm pt-1">{settings.paymentAccountName}</p>
+                    <p className="font-semibold text-ink text-sm pt-0.5">{settings.paymentAccountName}</p>
                     <p className="font-mono text-xs text-mute">{settings.paymentAccountNumber}</p>
                   </div>
 
@@ -1079,6 +1213,80 @@ export function BookingPanel() {
                   ACCEPT
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Payment QR Code Lightbox Modal */}
+      {showQrModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            className="relative max-w-md w-full rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-line text-center space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="text-left">
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-mute font-semibold">
+                  Scan or Save to Pay
+                </p>
+                <h3 className="text-lg font-bold text-ink">
+                  {settings.paymentAccountName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className="size-8 rounded-full border border-line hover:bg-zinc-100 flex items-center justify-center text-sm text-ink transition"
+                aria-label="Close QR Modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative mx-auto size-72 sm:size-80 rounded-2xl border border-line bg-white p-3 shadow-xs">
+              <Image
+                src={settings.paymentQrUrl}
+                alt="Enlarged Payment QR Code"
+                fill
+                unoptimized
+                className="object-contain p-2"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-mono text-sm font-semibold text-ink">
+                {settings.paymentAccountNumber}
+              </p>
+              <p className="text-xs text-mute">
+                Amount to Transfer:{" "}
+                <strong className="font-mono text-ink">
+                  {settings.currencySymbol}
+                  {finalTotal}
+                </strong>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <a
+                href={settings.paymentQrUrl}
+                download="grove-district-payment-qr.png"
+                target="_blank"
+                rel="noreferrer"
+                className={`${btnGhost} py-2.5 text-xs`}
+              >
+                ⬇ Save / Download QR
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowQrModal(false)}
+                className={`${btnPrimary} py-2.5 text-xs`}
+              >
+                Done Scanning
+              </button>
             </div>
           </div>
         </div>
