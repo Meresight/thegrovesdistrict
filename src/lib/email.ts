@@ -90,7 +90,7 @@ export async function sendBookingNotifications(
             </div>
           </div>
 
-          <div style="background-color: #fafafa; border: 1px dashed #d4d4d8; border-radius: 12px; padding: 14px; margin-bottom: 24px; font-size: 12px; color: #52525b; line-height: 1.5;">
+          <div style="background-color: #fafafa; border: 1px dashed #d4d4d8; border-radius: 12px; padding: 14px; margin-bottom: 18px; font-size: 12px; color: #52525b; line-height: 1.5;">
             <strong>Facility Reminders:</strong><br/>
             • <strong>Bring Your Own Paddle:</strong> Balls and nets are set up on all courts.<br/>
             • <strong>Footwear:</strong> Non-marking court shoes are strictly required.<br/>
@@ -98,8 +98,16 @@ export async function sendBookingNotifications(
             • <strong>Strict No-Cancellation Policy:</strong> All verified bookings are final.
           </div>
 
-          <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 32px 0 0 0;">
-            Grove District · Cebu City, Philippines · ${site.phone}
+          <div style="background-color: #f4f4f5; border-radius: 12px; padding: 14px; margin-bottom: 24px; font-size: 12px; color: #3f3f46; line-height: 1.5; text-align: center;">
+            <strong>After Your Game — Rate Your Experience ★</strong><br/>
+            Once your scheduled court time finishes, share a quick 5-star review of our courts, hospitality, and café:<br/>
+            <a href="${site.url}/survey?ref=${booking.ref.slice(0, 8).toUpperCase()}" style="display: inline-block; margin-top: 10px; background: #18181b; color: #ffffff; padding: 8px 18px; font-size: 11px; font-weight: 600; text-decoration: none; border-radius: 9999px;">
+              Rate Your Game (#${booking.ref.slice(0, 8).toUpperCase()}) →
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 24px 0 0 0;">
+            Grove District · <a href="${site.mapsUrl}" style="color: #52525b; text-decoration: underline;">Get Directions on Google Maps ↗</a> · ${site.phone}
           </p>
         </div>
       `,
@@ -182,7 +190,7 @@ export async function sendWelcomeMemberEmail(
           <div style="background: #f4f4f5; border-radius: 12px; padding: 18px; margin-bottom: 24px; font-size: 13px; border: 1px solid #e4e4e7;">
             <p style="margin: 0 0 8px 0; font-weight: 700; color: #18181b; font-size: 14px;">🏆 Your Member Loyalty Perk:</p>
             <p style="margin: 0; color: #52525b; line-height: 1.6;">
-              Every 10 confirmed games you play unlocks <strong>50% off 1 court on your 11th booking</strong> (repeats every 10 games). All your reservations are automatically tracked under your email <strong>${email}</strong>.
+              Every 10 confirmed games you play unlocks <strong>50% off up to 2 courts / 2 hours on your 11th booking</strong> (repeats every 10 games). All your reservations are automatically tracked under your email <strong>${email}</strong>.
             </p>
           </div>
 
@@ -193,7 +201,7 @@ export async function sendWelcomeMemberEmail(
           </div>
 
           <p style="font-size: 12px; color: #a1a1aa; text-align: center; margin: 32px 0 0 0;">
-            Grove District · Cebu City, Philippines · ${site.phone}
+            Grove District · <a href="${site.mapsUrl}" style="color: #52525b; text-decoration: underline;">Get Directions on Google Maps ↗</a> · ${site.phone}
           </p>
         </div>
       `,

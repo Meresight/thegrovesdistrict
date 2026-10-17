@@ -49,7 +49,41 @@ type ClubSettings = {
   announcement?: string;
 };
 
-type AdminView = "overview" | "queue" | "schedule" | "pricing" | "waiver";
+type AdminView = "overview" | "queue" | "schedule" | "pricing" | "waiver" | "surveys";
+
+type AdminSurvey = {
+  id: string;
+  bookingId: string;
+  bookingRef: string;
+  playerName: string;
+  playerEmail: string;
+  isMember: boolean;
+  playDate: string;
+  courtLabel: string;
+  hoursLabel: string;
+  overall: number;
+  hospitality: number;
+  courtQuality: number;
+  cafeFood: number;
+  comment: string;
+  featured: boolean;
+  createdAt: string;
+};
+
+function formatBookedAtManila(iso: string | undefined | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(d);
+}
 
 export default function AdminPage() {
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
@@ -67,8 +101,11 @@ export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [resendingRef, setResendingRef] = useState<string | null>(null);
   const [resendStatus, setResendStatus] = useState<Record<string, string>>({});
+  const [copiedSurveyRef, setCopiedSurveyRef] = useState<string | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [surveys, setSurveys] = useState<AdminSurvey[]>([]);
+  const [loadingSurveys, setLoadingSurveys] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -112,6 +149,7 @@ export default function AdminPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [qrFile, setQrFile] = useState<File | null>(null);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
   const [showWaiverClauses, setShowWaiverClauses] = useState(false);
 
   useEffect(() => {
@@ -134,7 +172,50 @@ export default function AdminPage() {
     if (!session) return;
     loadBookings();
     loadSettings();
+    loadSurveys();
   }, [session]);
+
+  async function loadSurveys() {
+    setLoadingSurveys(true);
+    try {
+      const res = await fetch("/api/surveys?admin=1", {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (Array.isArray(data.surveys)) setSurveys(data.surveys);
+    } catch {}
+    setLoadingSurveys(false);
+  }
+
+  async function handleToggleSurveyFeatured(id: string, featured: boolean) {
+    try {
+      const res = await fetch("/api/surveys", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ id, featured }),
+      });
+      if (res.ok) {
+        setSurveys((prev) => prev.map((s) => (s.id === id ? { ...s, featured } : s)));
+      }
+    } catch {}
+  }
+
+  async function handleDeleteSurvey(id: string) {
+    if (!confirm("Delete this survey feedback permanently?")) return;
+    try {
+      const res = await fetch(`/api/surveys?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (res.ok) {
+        setSurveys((prev) => prev.filter((s) => s.id !== id));
+      }
+    } catch {}
+  }
 
   async function loadBookings() {
     setLoadingBookings(true);
@@ -306,14 +387,20 @@ export default function AdminPage() {
     setSettingsMsg(null);
     try {
       let finalQrUrl = settings.paymentQrUrl;
-      if (qrFile && supabase) {
-        const ext = qrFile.name.split(".").pop();
-        const path = `qr-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("receipts").upload(path, qrFile);
-        if (!upErr) {
-          const { data: pubData } = supabase.storage.from("receipts").getPublicUrl(path);
-          finalQrUrl = pubData.publicUrl;
+      if (qrFile) {
+        const fd = new FormData();
+        fd.append("file", qrFile);
+        const upRes = await fetch("/api/upload", {
+          method: "POST",
+          body: fd,
+        });
+        const upData = await upRes.json().catch(() => null);
+        if (!upRes.ok || !upData?.url) {
+          setSettingsMsg(upData?.error || "Failed to upload QR image.");
+          setSavingSettings(false);
+          return;
         }
+        finalQrUrl = `/api/receipt?url=${encodeURIComponent(upData.url)}`;
       }
 
       const res = await fetch("/api/admin/settings", {
@@ -331,6 +418,8 @@ export default function AdminPage() {
       if (res.ok) {
         setSettingsMsg("Settings saved successfully!");
         setSettings((prev) => ({ ...prev, paymentQrUrl: finalQrUrl }));
+        setQrFile(null);
+        setQrPreviewUrl(null);
       } else {
         setSettingsMsg("Error saving settings.");
       }
@@ -571,6 +660,30 @@ export default function AdminPage() {
               Rules & Waiver
             </button>
 
+            <button
+              onClick={() => {
+                setActiveView("surveys");
+                setSidebarOpen(false);
+                loadSurveys();
+              }}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                activeView === "surveys"
+                  ? "bg-ink text-white shadow-xs"
+                  : "text-ink/80 hover:bg-zinc-100"
+              }`}
+            >
+              <span>Player Surveys ★</span>
+              {surveys.length > 0 && (
+                <span
+                  className={`size-5 rounded-full text-[10px] flex items-center justify-center font-bold ${
+                    activeView === "surveys" ? "bg-amber-400 text-ink" : "bg-zinc-200 text-ink"
+                  }`}
+                >
+                  {surveys.length}
+                </span>
+              )}
+            </button>
+
             <div className="pt-4 border-t border-line/60 my-2">
               <Link
                 href="/book"
@@ -578,6 +691,14 @@ export default function AdminPage() {
                 className="w-full flex items-center justify-between px-3.5 py-2 text-xs text-mute hover:text-ink font-medium"
               >
                 <span>Live Court Matrix</span>
+                <span>↗</span>
+              </Link>
+              <Link
+                href="/survey"
+                target="_blank"
+                className="w-full flex items-center justify-between px-3.5 py-2 text-xs text-mute hover:text-ink font-medium"
+              >
+                <span>Public Survey Page</span>
                 <span>↗</span>
               </Link>
             </div>
@@ -614,10 +735,17 @@ export default function AdminPage() {
               {activeView === "overview" && "Club Performance & Revenue"}
               {activeView === "pricing" && "Court Pricing & GCash Details"}
               {activeView === "waiver" && "Player Waiver & Club Rules"}
+              {activeView === "surveys" && "Player Surveys & Homepage Curation"}
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={loadBookings} className={`${btnGhost} text-xs py-1.5 px-3`}>
+            <button
+              onClick={() => {
+                loadBookings();
+                loadSurveys();
+              }}
+              className={`${btnGhost} text-xs py-1.5 px-3`}
+            >
               ↻ Refresh Live
             </button>
             <button
@@ -835,6 +963,13 @@ export default function AdminPage() {
                                   ⏱ Past Game
                                 </span>
                               ) : null}
+
+                              <span
+                                className="rounded-full bg-zinc-100 border border-line px-2.5 py-0.5 text-[10px] font-mono text-zinc-700"
+                                title="Exact Manila date & time when the customer submitted this booking"
+                              >
+                                🕒 Booked: {formatBookedAtManila(first.created_at)}
+                              </span>
                             </div>
 
                             <h3 className="text-base font-semibold text-ink">{first.name}</h3>
@@ -920,6 +1055,26 @@ export default function AdminPage() {
 
                               {first.status === "confirmed" && (
                                 <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const shortRef = ref.slice(0, 8).toUpperCase();
+                                      const surveyUrl = `${window.location.origin}/survey?ref=${shortRef}`;
+                                      navigator.clipboard?.writeText(surveyUrl);
+                                      setCopiedSurveyRef(ref);
+                                      setTimeout(() => {
+                                        setCopiedSurveyRef((prev) => (prev === ref ? null : prev));
+                                      }, 3000);
+                                    }}
+                                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                                      copiedSurveyRef === ref
+                                        ? "bg-amber-50 text-amber-800 border-amber-300"
+                                        : "border-line bg-white text-ink hover:border-ink shadow-2xs"
+                                    }`}
+                                    title="Copy post-play 5-star survey link for this booking"
+                                  >
+                                    {copiedSurveyRef === ref ? "✓ Survey Link Copied!" : "★ Copy Survey Link"}
+                                  </button>
                                   <button
                                     onClick={() => handleResendEmail(ref)}
                                     disabled={resendingRef === ref}
@@ -1030,7 +1185,7 @@ export default function AdminPage() {
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-50 border border-line space-y-1">
                     <p className="font-semibold text-ink">Loyalty Mechanic</p>
-                    <p className="text-mute">50% discount on 10th game for 1 court</p>
+                    <p className="text-mute">50% discount after 10 games for up to 2 courts / 2 hours</p>
                   </div>
                 </div>
               </div>
@@ -1109,7 +1264,7 @@ export default function AdminPage() {
                         setSettings({ ...settings, memberDiscountPercent: Number(e.target.value) })
                       }
                     />
-                    <span className="text-[10px] text-mute">Applies to 1 court slot on player&apos;s 10th game (50% off).</span>
+                    <span className="text-[10px] text-mute">Applies to up to 2 court-hours (2 courts / 2 hrs) after every 10 games (50% off).</span>
                   </div>
                 </div>
 
@@ -1178,15 +1333,31 @@ export default function AdminPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => setQrFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] || null;
+                        setQrFile(f);
+                        if (f) {
+                          setQrPreviewUrl(URL.createObjectURL(f));
+                        } else {
+                          setQrPreviewUrl(null);
+                        }
+                      }}
                       className="text-xs text-mute file:mr-3 file:rounded-xl file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
                     />
-                    {settings.paymentQrUrl && (
+                    {(qrPreviewUrl || settings.paymentQrUrl) && (
                       <div className="mt-3 flex items-center gap-3">
                         <div className="relative size-20 rounded-xl border border-line overflow-hidden bg-white p-1">
-                          <Image src={settings.paymentQrUrl} alt="Payment QR" fill className="object-contain" />
+                          <Image
+                            src={qrPreviewUrl || settings.paymentQrUrl}
+                            alt="Payment QR"
+                            fill
+                            unoptimized
+                            className="object-contain"
+                          />
                         </div>
-                        <span className="text-xs text-mute font-mono">Current active QR code</span>
+                        <span className="text-xs text-mute font-mono">
+                          {qrPreviewUrl ? "New QR selected (Click Save Changes to publish)" : "Current active QR code"}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1349,6 +1520,171 @@ export default function AdminPage() {
                     </span>
                   </div>
                 </form>
+              </div>
+            );
+          })()}
+
+          {/* VIEW 5: PLAYER SURVEYS & HOMEPAGE CURATION */}
+          {activeView === "surveys" && (() => {
+            const featuredCount = surveys.filter((s) => s.featured).length;
+            const avgOverall =
+              surveys.length > 0
+                ? (surveys.reduce((acc, s) => acc + s.overall, 0) / surveys.length).toFixed(1)
+                : "—";
+
+            return (
+              <div className="space-y-6">
+                {/* Summary KPI Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="rounded-2xl border border-line bg-white p-5 space-y-1 shadow-xs">
+                    <p className="text-[11px] uppercase font-mono tracking-wider text-mute">Total Reviews</p>
+                    <p className="text-3xl font-bold font-mono text-ink">{surveys.length}</p>
+                    <p className="text-[11px] text-mute">Members & Guest players</p>
+                  </div>
+                  <div className="rounded-2xl border border-line bg-white p-5 space-y-1 shadow-xs">
+                    <p className="text-[11px] uppercase font-mono tracking-wider text-mute">Avg Overall Rating</p>
+                    <p className="text-3xl font-bold font-mono text-amber-500">{avgOverall} ★</p>
+                    <p className="text-[11px] text-mute">Across all submissions</p>
+                  </div>
+                  <div className="rounded-2xl border border-line bg-white p-5 space-y-1 shadow-xs">
+                    <p className="text-[11px] uppercase font-mono tracking-wider text-mute">Featured on Homepage</p>
+                    <p className="text-3xl font-bold font-mono text-emerald-700">{featuredCount}</p>
+                    <p className="text-[11px] text-mute">Approved public reviews</p>
+                  </div>
+                  <div className="rounded-2xl border border-line bg-white p-5 space-y-1 shadow-xs">
+                    <p className="text-[11px] uppercase font-mono tracking-wider text-mute">Private (Internal Only)</p>
+                    <p className="text-3xl font-bold font-mono text-zinc-600">{surveys.length - featuredCount}</p>
+                    <p className="text-[11px] text-mute">Hidden from public homepage</p>
+                  </div>
+                </div>
+
+                {/* 1-Star Protection Notice Banner */}
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-semibold text-amber-950">
+                      🛡️ Owner Homepage Curation & 1-Star Protection Active
+                    </p>
+                    <p className="text-xs text-amber-900/90 leading-relaxed">
+                      New player surveys (including any 1-star complaints) go privately to this inbox first and <strong>never auto-publish</strong>. Only reviews you toggle with <strong>&ldquo;★ Feature on Homepage&rdquo;</strong> will appear on the public homepage.
+                    </p>
+                  </div>
+                  <Link
+                    href="/survey"
+                    target="_blank"
+                    className="rounded-xl border border-amber-300 bg-white px-3.5 py-2 text-xs font-semibold text-ink hover:border-ink transition shrink-0 text-center"
+                  >
+                    Open Survey Page ↗
+                  </Link>
+                </div>
+
+                {loadingSurveys ? (
+                  <div className="p-12 text-center text-xs text-mute font-mono">Loading player surveys…</div>
+                ) : surveys.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center text-xs text-mute space-y-1">
+                    <p className="font-medium text-ink">No player surveys submitted yet</p>
+                    <p>
+                      Once a confirmed booking finishes its scheduled court time, players can rate their session at /survey or via the link on their booking card.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {surveys.map((s) => (
+                      <div
+                        key={s.id}
+                        className={`rounded-2xl border bg-white p-5 shadow-xs transition space-y-3 ${
+                          s.featured ? "border-emerald-300 bg-emerald-50/10" : "border-line"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="space-y-1.5 max-w-2xl">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-ink">
+                                #{s.bookingRef}
+                              </span>
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                                  s.featured
+                                    ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                                    : "bg-zinc-100 border border-zinc-200 text-zinc-600"
+                                }`}
+                              >
+                                {s.featured ? "★ Featured on Homepage" : "🔒 Private Feedback"}
+                              </span>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-mono ${
+                                  s.isMember
+                                    ? "bg-amber-50 border border-amber-200 text-amber-800"
+                                    : "bg-zinc-100 text-zinc-700"
+                                }`}
+                              >
+                                {s.isMember ? "Club Member" : "Guest Player"}
+                              </span>
+                              <span className="text-[10px] font-mono text-mute">
+                                Submitted: {formatBookedAtManila(s.createdAt)}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                              <h3 className="text-sm font-semibold text-ink">{s.playerName}</h3>
+                              <span className="text-xs font-mono text-mute">({s.playerEmail})</span>
+                              <span className="text-xs text-mute">·</span>
+                              <span className="text-xs font-medium text-ink">
+                                {s.courtLabel} ({s.playDate} · {s.hoursLabel})
+                              </span>
+                            </div>
+
+                            {/* Category Breakdown */}
+                            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-mono">
+                              <span className="rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1 font-bold text-amber-900">
+                                Overall: {s.overall}/5 ★
+                              </span>
+                              <span className="rounded-lg bg-zinc-50 border border-line px-2.5 py-1 text-ink">
+                                Hospitality: {s.hospitality}/5 ★
+                              </span>
+                              <span className="rounded-lg bg-zinc-50 border border-line px-2.5 py-1 text-ink">
+                                Courts: {s.courtQuality}/5 ★
+                              </span>
+                              <span className="rounded-lg bg-zinc-50 border border-line px-2.5 py-1 text-ink">
+                                Café & Food: {s.cafeFood}/5 ★
+                              </span>
+                            </div>
+
+                            {s.comment ? (
+                              <p className="text-xs text-ink bg-zinc-50 p-3 rounded-xl border border-line leading-relaxed mt-2">
+                                &ldquo;{s.comment}&rdquo;
+                              </p>
+                            ) : (
+                              <p className="text-xs text-mute italic pt-1">
+                                No written comment attached.
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSurveyFeatured(s.id, !s.featured)}
+                              className={`rounded-xl px-4 py-2 text-xs font-semibold transition shadow-2xs ${
+                                s.featured
+                                  ? "border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                                  : "bg-ink text-white hover:bg-black"
+                              }`}
+                            >
+                              {s.featured ? "✓ Featured on Homepage (Click to Hide)" : "★ Feature on Homepage"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSurvey(s.id)}
+                              className="rounded-xl border border-line px-3 py-2 text-xs text-mute hover:text-rose-600 hover:border-rose-200 transition"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })()}

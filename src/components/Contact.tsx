@@ -10,27 +10,56 @@ export function Contact() {
   return (
     <section id="contact" className="scroll-mt-16 border-t border-line">
       <div className="grid md:grid-cols-2">
-        <div className="flex flex-col justify-between gap-12 p-6 md:p-10">
-          <p className={eyebrow}>(08) Contact</p>
+        <div className="flex flex-col justify-between gap-8 p-6 md:p-10">
           <div>
-            <h2 className="text-[1.65rem] leading-[1.1] tracking-[-0.03em] md:text-[2.4rem]">Say hello.</h2>
-            <address className="mt-6 grid gap-1.5 text-[13px] not-italic text-mute">
+            <p className={eyebrow}>(08) Location & Contact</p>
+            <h2 className="mt-3 text-[1.65rem] leading-[1.1] tracking-[-0.03em] md:text-[2.4rem]">
+              Find us & say hello.
+            </h2>
+            <address className="mt-5 grid gap-1.5 text-[13px] not-italic text-mute">
               {site.address.map((l) => (
-                <span key={l}>{l}</span>
+                <span key={l} className="text-ink font-medium">
+                  {l}
+                </span>
               ))}
-              <span className="text-ink font-medium text-xs pt-1">
-                Free on-site parking available
+              <span className="text-emerald-800 font-medium text-xs pt-0.5">
+                ✓ Free on-site parking available · Open daily 8:00 AM – 2:00 AM
               </span>
-              <a className="mt-2 text-ink hover:opacity-60" href={`mailto:${site.email}`}>
-                {site.email}
-              </a>
-              <a className="text-ink hover:opacity-60" href={`tel:${site.phone.replace(/\s/g, "")}`}>
-                {site.phone}
-              </a>
-              <a className="text-ink hover:opacity-60" href={site.instagram} target="_blank" rel="noopener noreferrer">
-                Instagram ↗
-              </a>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <a
+                  href={site.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={btnGhost}
+                >
+                  📍 Get Directions on Google Maps ↗
+                </a>
+              </div>
+              <div className="grid gap-1 pt-3">
+                <a className="text-ink hover:opacity-60" href={`mailto:${site.email}`}>
+                  {site.email}
+                </a>
+                <a className="text-ink hover:opacity-60" href={`tel:${site.phone.replace(/\s/g, "")}`}>
+                  {site.phone}
+                </a>
+                <a className="text-ink hover:opacity-60" href={site.instagram} target="_blank" rel="noopener noreferrer">
+                  Instagram ↗
+                </a>
+              </div>
             </address>
+          </div>
+
+          {/* Interactive Google Maps Embed */}
+          <div className="overflow-hidden rounded-2xl border border-line bg-zinc-100 shadow-2xs">
+            <iframe
+              title="Grove District Location — A P Y Cane Inc."
+              src={site.mapsEmbedUrl}
+              width="100%"
+              height="240"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="block w-full border-0"
+            />
           </div>
         </div>
 

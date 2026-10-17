@@ -1,10 +1,12 @@
 /**
  * Loyalty rule (single source of truth — used by the booking API, booking panel and member dashboard).
  *
- * After every 10 CONFIRMED games, the member's NEXT booking (the 11th, 21st, 31st…) gets
- * the member discount on exactly ONE court-hour slot. Whole-facility buyouts never qualify.
+ * After every 10 CONFIRMED court-hour games, the member's NEXT booking (the 11th, 21st, 31st…) gets
+ * the 50% member discount on up to TWO court-hour slots (e.g. 2 courts for 1 hour or 1 court for 2 hours).
+ * Whole-facility buyouts never qualify.
  */
 export const LOYALTY_CYCLE = 10;
+export const LOYALTY_MAX_DISCOUNT_SLOTS = 2;
 
 /** True when the member's next booking should receive the reward. */
 export function qualifiesForLoyaltyReward(confirmedGames: number): boolean {

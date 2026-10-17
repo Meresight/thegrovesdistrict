@@ -89,6 +89,40 @@ export function WaysToPlay() {
               </div>
             ))}
           </div>
+
+          {/* Highlighted Member 50% Loyalty Perk Banner */}
+          <div className="rounded-2xl border border-ink bg-ink text-white p-6 md:p-8 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2.5 max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-white">
+                  <span>★ Club Member Loyalty Perk</span>
+                  <span className="text-white/50">·</span>
+                  <span className="text-emerald-300">50% Off 2 Courts / 2 Hours</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-medium tracking-tight text-white">
+                  Play 10 Hours. Get 50% Off Up to 2 Courts (2 Hours).
+                </h3>
+                <p className="text-xs md:text-sm leading-relaxed text-zinc-300">
+                  Create a free Grove District Member Account to automatically track every confirmed court-hour you play. After every 10 confirmed hours, your 11th booking unlocks <strong className="text-white font-semibold">50% off up to 2 court-hours</strong> (1 court for 2 hours or 2 courts for 1 hour).
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row gap-2.5 shrink-0">
+                <Link
+                  href="/member"
+                  className="rounded-full bg-white px-5 py-2.5 text-center text-xs font-semibold text-ink hover:bg-zinc-100 transition"
+                >
+                  Member Portal / Join Free →
+                </Link>
+                <Link
+                  href="/book"
+                  className="rounded-full border border-white/25 bg-white/5 px-5 py-2.5 text-center text-xs font-semibold text-white hover:bg-white/15 transition"
+                >
+                  Book a Court
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

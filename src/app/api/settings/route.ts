@@ -52,6 +52,12 @@ export async function GET(req: NextRequest) {
   const peakRate = Number(data.regular_hourly_rate) || 550;
   const offPeakRate = extra.offPeakRate !== undefined ? Number(extra.offPeakRate) : 450;
 
+  const rawQrUrl = data.payment_qr_url || "/images/logo-mark.png";
+  const normalizedQrUrl =
+    rawQrUrl.startsWith("http") && rawQrUrl.includes("/receipts/")
+      ? `/api/receipt?url=${encodeURIComponent(rawQrUrl)}`
+      : rawQrUrl;
+
   return json({
     settings: {
       regularHourlyRate: peakRate,
@@ -61,7 +67,7 @@ export async function GET(req: NextRequest) {
       currencySymbol: data.currency_symbol || "₱",
       paymentAccountName: data.payment_account_name || "Grove District",
       paymentAccountNumber: data.payment_account_number || "09509979540 (GCash / Maya)",
-      paymentQrUrl: data.payment_qr_url || "/images/logo-mark.png",
+      paymentQrUrl: normalizedQrUrl,
       waiverText: extra.text || data.waiver_text || fallback.waiverText,
       announcement: extra.announcement || "",
     },

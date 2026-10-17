@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Join } from "@/components/Join";
+import { PlayerReviews } from "@/components/PlayerReviews";
 import { WaysToPlay } from "@/components/WaysToPlay";
 import { site } from "@/lib/config";
 
@@ -22,6 +23,12 @@ const jsonLd = {
   url: site.url,
   image: `${site.url}/images/court-main.jpg`,
   sport: "Pickleball",
+  hasMap: site.mapsUrl,
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 10.3458956,
+    longitude: 123.953386,
+  },
 };
 
 export default function Home() {
@@ -36,6 +43,7 @@ export default function Home() {
           <Courts />
           <Cafe />
           <Events />
+          <PlayerReviews />
           <Join />
           <Faq />
           <Contact />

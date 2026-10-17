@@ -257,8 +257,8 @@ export default function MemberDashboardPage() {
             <p className={eyebrow}>10-Game Loyalty Perk</p>
             <h3 className="text-lg font-medium text-ink">
               {loyalty.eligible
-                ? "🎉 You unlocked 50% Off 1 court on your next booking!"
-                : `${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} until 50% Off`}
+                ? "🎉 You unlocked 50% Off up to 2 courts / 2 hours on your next booking!"
+                : `${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} until 50% Off (2 Hrs / 2 Courts)`}
             </h3>
           </div>
           <span className="font-mono text-sm font-semibold text-ink">
@@ -292,8 +292,8 @@ export default function MemberDashboardPage() {
         </div>
         <p className="text-[11px] text-mute leading-relaxed">
           {loyalty.eligible
-            ? `Your reward is ready: booking #${loyalty.rewardBookingNumber} will automatically receive 50% off 1 court slot.`
-            : `Play 10 confirmed games to receive 50% off 1 court on game #${loyalty.rewardBookingNumber}. Repeats every 10 games.`}
+            ? `Your reward is ready: booking #${loyalty.rewardBookingNumber} will automatically receive 50% off up to 2 court-hours (2 courts or 2 hours).`
+            : `Play 10 confirmed games to receive 50% off up to 2 courts / 2 hours on booking #${loyalty.rewardBookingNumber}. Repeats every 10 games.`}
         </p>
       </div>
 
@@ -340,11 +340,19 @@ export default function MemberDashboardPage() {
                       </span>
                     </div>
 
-                    <div>
+                    <div className="flex items-center gap-2">
                       {res.status === "confirmed" && (
-                        <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          ✓ Confirmed & Paid
-                        </span>
+                        <>
+                          <Link
+                            href={`/survey?ref=${res.shortRef}`}
+                            className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-amber-100 transition"
+                          >
+                            ★ Rate Your Game
+                          </Link>
+                          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            ✓ Confirmed & Paid
+                          </span>
+                        </>
                       )}
                       {res.status === "pending_review" && (
                         <span className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800">
@@ -384,7 +392,7 @@ export default function MemberDashboardPage() {
                     <span>Ref: #{res.shortRef}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-zinc-400">Final & non-refundable</span>
-                      <span>Reserved {new Date(res.createdAt).toLocaleDateString()}</span>
+                      <span>Reserved {new Date(res.createdAt).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}</span>
                     </div>
                   </div>
                 </div>

@@ -195,14 +195,14 @@ export function BookingPanel() {
     ? settings.eventHourlyRate * distinctHours.length
     : selectedSlots.reduce((sum, s) => sum + getSlotRate(s.hour), 0);
 
-  // Loyalty reward: after every 10 confirmed games the next booking gets the discount on ONE court-hour only.
+  // Loyalty reward: after every 10 confirmed games the next booking gets 50% off up to TWO court-hours (2 courts or 2 hours).
   const loyalty = loyaltyProgress(confirmedGames);
   const qualifiesForLoyaltyReward =
     Boolean(currentUser) && isRewardGame(confirmedGames) && !hasPendingReward && !isEvent && selectedSlots.length > 0;
-  // Apply 50% discount to exactly ONE single court slot
-  const singleCourtRateForDiscount = selectedSlots.length > 0 ? getSlotRate(selectedSlots[0].hour) : 0;
+  // Apply 50% discount to up to TWO court-hour slots
+  const discountableSubtotal = selectedSlots.slice(0, 2).reduce((sum, s) => sum + getSlotRate(s.hour), 0);
   const discountAmount = qualifiesForLoyaltyReward
-    ? Math.round((singleCourtRateForDiscount * settings.memberDiscountPercent) / 100)
+    ? Math.round((discountableSubtotal * settings.memberDiscountPercent) / 100)
     : 0;
   const finalTotal = Math.max(0, rawTotal - discountAmount);
 
@@ -336,7 +336,7 @@ export function BookingPanel() {
             {done.isLoyaltyReward && (
               <div className="flex justify-between text-emerald-700 font-medium">
                 <span>Loyalty reward applied</span>
-                <span>{settings.memberDiscountPercent}% off 1 court</span>
+                <span>{settings.memberDiscountPercent}% off (up to 2 hrs / 2 courts)</span>
               </div>
             )}
             <div className="flex justify-between items-baseline pt-3 border-t border-line">
@@ -352,6 +352,19 @@ export function BookingPanel() {
                 Awaiting payment check
               </span>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-left space-y-1 text-xs">
+            <p className="font-semibold text-amber-950">
+              ★ Save your Reference: <span className="font-mono">#{done.ref}</span>
+            </p>
+            <p className="text-[11px] text-amber-900/90 leading-relaxed">
+              After your scheduled game finishes, you can rate our hospitality, courts, and café at{" "}
+              <a href={`/survey?ref=${done.ref}`} className="font-medium underline text-ink">
+                /survey?ref={done.ref}
+              </a>{" "}
+              (works for both Members and Guests without an account).
+            </p>
           </div>
 
           <p className="text-[11px] text-mute">All bookings are final and non-refundable.</p>
@@ -599,7 +612,7 @@ export function BookingPanel() {
 
                     {qualifiesForLoyaltyReward && (
                       <div className="flex justify-between text-emerald-600 font-medium">
-                        <span>Loyalty Perk (50% Off 1 Court)</span>
+                        <span>Loyalty Perk (50% Off Up to 2 Hrs / 2 Courts)</span>
                         <span className="font-mono">-{settings.currencySymbol}{discountAmount}</span>
                       </div>
                     )}
@@ -619,15 +632,15 @@ export function BookingPanel() {
                     {currentUser ? (
                       <p className="text-[10px]">
                         {loyalty.eligible
-                          ? "🎉 Reward active: 50% off 1 court slot on your next booking!"
-                          : `Play ${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} to get 50% off game #${loyalty.rewardBookingNumber}!`}
+                          ? "🎉 Reward active: 50% off up to 2 court-hours (2 hrs / 2 courts) on your next booking!"
+                          : `Play ${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} to get 50% off up to 2 courts / 2 hours on booking #${loyalty.rewardBookingNumber}!`}
                       </p>
                     ) : (
                       <p className="text-[10px] text-mute">
                         <a href="/member" className="text-wine font-medium underline">
                           Sign in
                         </a>{" "}
-                        to count this game toward 50% off every 10 games.
+                        to count this game toward 50% off (2 hrs / 2 courts) every 10 games.
                       </p>
                     )}
                   </div>
@@ -752,7 +765,7 @@ export function BookingPanel() {
 
                   {qualifiesForLoyaltyReward && (
                     <div className="flex justify-between text-xs text-emerald-600 font-medium pt-2 border-t border-line">
-                      <span>Loyalty Perk (50% Off 1 Court)</span>
+                      <span>Loyalty Perk (50% Off Up to 2 Hrs / 2 Courts)</span>
                       <span className="font-mono">-{settings.currencySymbol}{discountAmount}</span>
                     </div>
                   )}
@@ -784,6 +797,7 @@ export function BookingPanel() {
                         src={settings.paymentQrUrl}
                         alt="Payment QR"
                         fill
+                        unoptimized
                         className="object-contain"
                       />
                     </div>

@@ -51,7 +51,21 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return json({ error: "Invalid payload" }, 400);
 
+  // Preserve any existing surveys stored in waiver_text JSON
+  let existingExtra: Record<string, unknown> = {};
+  const { data: currentRow } = await db
+    .from("club_settings")
+    .select("waiver_text")
+    .eq("id", 1)
+    .maybeSingle();
+  if (currentRow?.waiver_text && currentRow.waiver_text.trim().startsWith("{")) {
+    try {
+      existingExtra = JSON.parse(currentRow.waiver_text);
+    } catch {}
+  }
+
   const waiverPayload = JSON.stringify({
+    ...existingExtra,
     text: body.waiverText || "",
     offPeakRate: body.offPeakHourlyRate !== undefined ? Number(body.offPeakHourlyRate) : 450,
     announcement: body.announcement || "",

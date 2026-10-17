@@ -105,8 +105,8 @@ export async function POST(req: NextRequest) {
   // Price calculation: Off-peak (8am-4pm) = ₱450, Peak (4pm-2am) = ₱550
   const slotRate = (h: number) => (h >= 8 && h < 16 ? booking.defaultOffPeakRate : booking.defaultPeakRate);
 
-  // Reward applies to ONE court-hour slot only (never whole-facility buyouts), and only one
-  // reward can be pending at a time so it can't be stacked before approval.
+  // Reward applies to up to TWO court-hour slots (2 courts for 1 hr or 1 court for 2 hrs),
+  // never whole-facility buyouts, and only one reward can be pending at a time.
   const qualifiesFor50Percent =
     isMember && qualifiesForLoyaltyReward(confirmedGames) && !hasPendingReward && !isEvent && slotList.length > 0;
 
@@ -114,9 +114,9 @@ export async function POST(req: NextRequest) {
     ? eventRate * hours.length
     : slotList.reduce((sum, s) => sum + slotRate(s.hour), 0);
 
-  // Discount applies ONLY to 1 single court hour slot
-  const singleCourtSlotRate = slotList.length > 0 ? slotRate(slotList[0].hour) : 0;
-  const discountAmount = qualifiesFor50Percent ? Math.round((singleCourtSlotRate * discountPct) / 100) : 0;
+  // Discount applies to up to 2 court-hour slots (2 courts / 2 hours)
+  const discountableSubtotal = slotList.slice(0, 2).reduce((sum, s) => sum + slotRate(s.hour), 0);
+  const discountAmount = qualifiesFor50Percent ? Math.round((discountableSubtotal * discountPct) / 100) : 0;
   const finalTotal = Math.max(0, rawTotal - discountAmount);
 
   const ref = crypto.randomUUID();

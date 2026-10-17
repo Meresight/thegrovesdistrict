@@ -286,7 +286,7 @@ export function AuthModal({
     if (mode === "update_password")
       return "Enter your new account password below to finish recovery.";
     if (mode === "signup")
-      return "Sign up to track your games. Play 10 confirmed games to receive 50% off 1 court on your 11th booking!";
+      return "Sign up to track your games. Play 10 confirmed games to receive 50% off up to 2 courts (2 hours) on your 11th booking!";
     return "Sign in with your email to track your bookings and unlock loyalty perks.";
   };
 

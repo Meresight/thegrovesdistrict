@@ -17,14 +17,22 @@ export function Footer() {
           <Link href="/book" className="hover:text-ink transition">
             Book a Court
           </Link>
+          <Link href="/survey" className="hover:text-ink transition">
+            Rate Your Game ★
+          </Link>
           <Link href="/waiver" className="hover:text-ink transition">
             Rules & Safety Waiver
           </Link>
           <Link href="/member" className="hover:text-ink transition">
             Member Portal
           </Link>
-          <a href="#contact" className="hover:text-ink transition">
-            Location & Hours
+          <a
+            href={site.mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-ink transition"
+          >
+            Google Maps Location ↗
           </a>
         </nav>
       </div>

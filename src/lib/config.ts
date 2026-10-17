@@ -12,9 +12,12 @@ export const site = {
   // Official club details
   email: "grovedistrictcebu@gmail.com",
   phone: "09509979540",
-  address: ["Cebu City", "Philippines"],
+  address: ["A P Y Cane Inc., Cebu", "Philippines"],
+  mapsUrl:
+    "https://www.google.com/maps/place/A+P+Y+Cane+Inc./@10.3458459,123.9531052,20z/data=!4m6!3m5!1s0x33a99847272547f1:0xb1e6837e67825353!8m2!3d10.3458956!4d123.953386!16s%2Fg%2F1tjwf8m4?entry=tts&g_ep=EgoyMDI2MTAxMy4wIPu8ASoASAFQAw%3D%3D&skid=659013ef-8ffe-4970-a250-a62a57d4a943",
+  mapsEmbedUrl: "https://www.google.com/maps?q=10.3458956,123.953386&z=18&output=embed",
   instagram: "https://instagram.com/grovedistrict",
-  // IANA timezone used for "today" and past-slot checks. TODO: confirm.
+  // IANA timezone used for "today" and past-slot checks.
   timezone: "Asia/Manila",
   // 24h+ clock. Slots run from 8:00 AM (8) up to 2:00 AM (26).
   hours: { open: 8, close: 26 },
