@@ -117,6 +117,8 @@ export default function AdminPage() {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [surveys, setSurveys] = useState<AdminSurvey[]>([]);
   const [loadingSurveys, setLoadingSurveys] = useState(false);
+  const [confirmDeleteSurveyId, setConfirmDeleteSurveyId] = useState<string | null>(null);
+  const [deletingSurveyId, setDeletingSurveyId] = useState<string | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [showAdminQrModal, setShowAdminQrModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -254,7 +256,7 @@ export default function AdminPage() {
   }
 
   async function handleDeleteSurvey(id: string) {
-    if (!confirm("Delete this survey feedback permanently?")) return;
+    setDeletingSurveyId(id);
     try {
       const res = await fetch(`/api/surveys?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -264,6 +266,8 @@ export default function AdminPage() {
         setSurveys((prev) => prev.filter((s) => s.id !== id));
       }
     } catch {}
+    setDeletingSurveyId(null);
+    setConfirmDeleteSurveyId(null);
   }
 
   async function loadBookings() {
@@ -1875,13 +1879,35 @@ export default function AdminPage() {
                             >
                               {s.featured ? "✓ Featured on Homepage (Click to Hide)" : "★ Feature on Homepage"}
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSurvey(s.id)}
-                              className="rounded-xl border border-line px-3 py-2 text-xs text-mute hover:text-rose-600 hover:border-rose-200 transition"
-                            >
-                              Delete
-                            </button>
+                            {confirmDeleteSurveyId === s.id ? (
+                              <div className="flex items-center gap-1.5 animate-in fade-in duration-150">
+                                <span className="text-[11px] text-rose-600 font-medium hidden sm:inline">Delete?</span>
+                                <button
+                                  type="button"
+                                  disabled={deletingSurveyId === s.id}
+                                  onClick={() => handleDeleteSurvey(s.id)}
+                                  className="rounded-xl bg-rose-600 text-white px-3 py-2 text-xs font-semibold hover:bg-rose-700 transition cursor-pointer shadow-2xs"
+                                >
+                                  {deletingSurveyId === s.id ? "Deleting…" : "Confirm Delete"}
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={deletingSurveyId === s.id}
+                                  onClick={() => setConfirmDeleteSurveyId(null)}
+                                  className="rounded-xl border border-line px-3 py-2 text-xs text-mute hover:text-ink transition cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteSurveyId(s.id)}
+                                className="rounded-xl border border-line px-3 py-2 text-xs text-mute hover:text-rose-600 hover:border-rose-200 transition cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
