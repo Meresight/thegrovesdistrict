@@ -315,9 +315,12 @@ function SurveyContent() {
                       </p>
                     </div>
                   ) : !selectedBooking.hasFinished ? (
-                    <div className="rounded-xl bg-amber-50/80 border border-amber-200 p-5 text-center space-y-1.5">
+                    <div className="rounded-xl bg-amber-50/80 border border-amber-200 p-5 text-center space-y-2">
+                      <span className="inline-block font-mono text-[10px] uppercase tracking-[0.16em] bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded font-semibold">
+                        Session Upcoming / In Progress
+                      </span>
                       <p className="text-sm font-medium text-amber-950">
-                        ⏳ Your scheduled game hasn&apos;t finished yet!
+                        Your scheduled game hasn&apos;t finished yet
                       </p>
                       <p className="text-xs text-amber-800 leading-relaxed">
                         This post-play survey unlocks automatically right after your scheduled court time ends on{" "}

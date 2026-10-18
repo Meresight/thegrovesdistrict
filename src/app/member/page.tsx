@@ -38,7 +38,7 @@ export default function MemberDashboardPage() {
   const [confirmedCount, setConfirmedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState(0);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function MemberDashboardPage() {
         window.location.search.includes("reset=true") ||
         window.location.hash.includes("type=recovery")
       ) {
-        setShowAuth(true);
+        setAuthMode("signin");
       }
     }
   }, []);
@@ -134,29 +134,61 @@ export default function MemberDashboardPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-md px-6 py-20 text-center space-y-4">
-        <p className={eyebrow}>Member Portal</p>
-        <h1 className="text-2xl font-medium tracking-tight">Please sign in to view your games</h1>
-        <p className="text-xs text-mute leading-relaxed">
-          {errorMsg || "Log in with your member account to see your court reservations, verified receipts, and track your loyalty perk progress."}
-        </p>
-        <div className="pt-3 flex items-center justify-center gap-3">
-          <button
-            onClick={() => setShowAuth(true)}
-            className={`${btnPrimary} text-xs py-2 px-5`}
-          >
-            Log In to Account
-          </button>
-          <Link href="/book" className={`${btnGhost} text-xs py-2 px-4`}>
-            Book a Court →
-          </Link>
+      <div className="mx-auto max-w-xl px-6 py-20 space-y-6">
+        <div className="rounded-2xl border border-line bg-white p-8 shadow-2xs text-center space-y-4">
+          <p className={eyebrow}>Grove District Member Club</p>
+          <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-ink">
+            Join Free or Sign In to Your Pass
+          </h1>
+          <p className="text-xs md:text-sm text-mute leading-relaxed max-w-md mx-auto">
+            {errorMsg ||
+              "Create a free member account in 15 seconds to track your confirmed court games. Every 10 confirmed games unlocks 50% off up to 2 courts / 2 hours on your next booking."}
+          </p>
+
+          <div className="rounded-xl border border-line bg-zinc-50/70 p-4 text-left space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">
+                Member Loyalty Pass
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
+                Free Forever · ₱0
+              </span>
+            </div>
+            <p className="text-xs font-medium text-ink">
+              Play 10 Confirmed Games → Get 50% Off Up to 2 Courts / 2 Hours
+            </p>
+            <p className="text-[11px] text-mute">
+              Past guest bookings made with the same email address are automatically linked to your account.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setAuthMode("signup")}
+              className={`${btnPrimary} text-xs py-2.5 px-5 cursor-pointer`}
+            >
+              Join as a Member — Free →
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode("signin")}
+              className={`${btnGhost} text-xs py-2.5 px-5 cursor-pointer`}
+            >
+              Sign In
+            </button>
+            <Link href="/book" className="text-xs font-mono uppercase tracking-wider text-mute hover:text-ink px-3 py-2">
+              Book a Court →
+            </Link>
+          </div>
         </div>
 
         <AuthModal
-          isOpen={showAuth}
-          onClose={() => setShowAuth(false)}
+          isOpen={authMode !== null}
+          initialMode={authMode ?? "signup"}
+          onClose={() => setAuthMode(null)}
           onSuccess={() => {
-            setShowAuth(false);
+            setAuthMode(null);
             setReloadTrigger((n) => n + 1);
           }}
         />
@@ -233,12 +265,12 @@ export default function MemberDashboardPage() {
 
             <div>
               {nextGame.status === "confirmed" ? (
-                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  ✓ Confirmed & Paid
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 font-mono text-[10px] uppercase tracking-wider font-semibold text-emerald-700">
+                  Confirmed & Paid
                 </span>
               ) : (
-                <span className="rounded-full bg-amber-50 border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-800">
-                  ⏳ Awaiting payment check
+                <span className="rounded-full bg-amber-50 border border-amber-300 px-3 py-1 font-mono text-[10px] uppercase tracking-wider font-semibold text-amber-800">
+                  Awaiting Payment Check
                 </span>
               )}
             </div>
@@ -257,7 +289,7 @@ export default function MemberDashboardPage() {
             <p className={eyebrow}>10-Game Loyalty Perk</p>
             <h3 className="text-lg font-medium text-ink">
               {loyalty.eligible
-                ? "🎉 You unlocked 50% Off up to 2 courts / 2 hours on your next booking!"
+                ? "Reward Unlocked · 50% Off up to 2 courts / 2 hours on your next booking"
                 : `${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} until 50% Off (2 Hrs / 2 Courts)`}
             </h3>
           </div>
@@ -345,23 +377,23 @@ export default function MemberDashboardPage() {
                         <>
                           <Link
                             href={`/survey?ref=${res.shortRef}`}
-                            className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-amber-100 transition"
+                            className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider font-semibold text-amber-900 hover:bg-amber-100 transition"
                           >
-                            ★ Rate Your Game
+                            Rate Game
                           </Link>
-                          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
-                            ✓ Confirmed & Paid
+                          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider font-semibold text-emerald-700">
+                            Confirmed & Paid
                           </span>
                         </>
                       )}
                       {res.status === "pending_review" && (
-                        <span className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                          ⏳ Awaiting payment check
+                        <span className="rounded-full bg-amber-50 border border-amber-300 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider font-semibold text-amber-800">
+                          Awaiting Payment Check
                         </span>
                       )}
                       {(res.status === "cancelled" || res.status === "declined") && (
-                        <span className="rounded-full bg-zinc-100 border border-zinc-200 px-2.5 py-0.5 text-[10px] font-semibold text-zinc-600">
-                          ✕ Declined
+                        <span className="rounded-full bg-zinc-100 border border-zinc-200 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider font-semibold text-zinc-600">
+                          Declined
                         </span>
                       )}
                     </div>
@@ -403,10 +435,11 @@ export default function MemberDashboardPage() {
       </div>
 
       <AuthModal
-        isOpen={showAuth}
-        onClose={() => setShowAuth(false)}
+        isOpen={authMode !== null}
+        initialMode={authMode ?? "signup"}
+        onClose={() => setAuthMode(null)}
         onSuccess={() => {
-          setShowAuth(false);
+          setAuthMode(null);
           setReloadTrigger((n) => n + 1);
         }}
       />

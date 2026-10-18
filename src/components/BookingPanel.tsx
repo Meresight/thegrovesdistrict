@@ -16,6 +16,7 @@ import { getMemberToken, useMember } from "@/lib/use-member";
 import { LOYALTY_CYCLE, loyaltyProgress, qualifiesForLoyaltyReward as isRewardGame } from "@/lib/loyalty";
 import { Honeypot } from "./form-utils";
 import { MonthCalendar } from "./MonthCalendar";
+import { AuthModal } from "./AuthModal";
 import { btnGhost, btnPrimary, eyebrow, input, label } from "./ui";
 import { WAIVER_SECTIONS, WAIVER_CONFIRMATION_TEXT, WAIVER_TITLE, WAIVER_PREAMBLE, parseWaiverSections } from "@/lib/waiver";
 
@@ -73,7 +74,7 @@ export function BookingPanel() {
   const [confirmedGames, setConfirmedGames] = useState<number>(0);
   const [hasPendingReward, setHasPendingReward] = useState(false);
 
-  // Checkout inputs
+  // Checkout inputs & modals
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [waiverAgreed, setWaiverAgreed] = useState(false);
@@ -81,6 +82,7 @@ export function BookingPanel() {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [showWaiverModal, setShowWaiverModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
@@ -423,6 +425,58 @@ export function BookingPanel() {
 
   return (
     <div className="w-full bg-white">
+      {/* Top Member Club Bar — allows inline Join Free / Sign In without leaving /book */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-zinc-50 border-b border-line text-xs">
+        {currentUser ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] bg-ink text-white px-2 py-0.5 rounded">
+              Member Active
+            </span>
+            <span className="font-mono text-ink font-medium">{currentUser.email}</span>
+            <span className="text-mute">·</span>
+            <span className="font-mono text-[11px] text-emerald-700 font-medium">
+              {loyalty.eligible
+                ? "50% Off Reward Unlocked (2 Courts / 2 Hrs)"
+                : `${loyalty.completed} / 10 Games toward 50% Off`}
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 text-mute">
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-semibold">
+              Member Perk
+            </span>
+            <span>
+              Join free in 15s to count this booking toward <strong className="text-ink">50% off up to 2 courts / 2 hours</strong> every 10 games.
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          {currentUser ? (
+            <a href="/member" className="font-mono text-[11px] uppercase tracking-wider text-ink underline hover:opacity-75">
+              My Games →
+            </a>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setAuthMode("signup")}
+                className="rounded-full bg-ink text-white px-3.5 py-1 text-[11px] font-medium hover:bg-black/85 transition cursor-pointer"
+              >
+                Join Free (15s)
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode("signin")}
+                className="font-mono text-[11px] uppercase tracking-wider text-ink underline hover:opacity-75 cursor-pointer"
+              >
+                Sign In
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* ================= STEP 1: CALENDAR & MULTI-COURT SCHEDULE ================= */}
       {step === "schedule" && (
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr_320px] divide-y lg:divide-y-0 lg:divide-x divide-line">
@@ -728,19 +782,31 @@ export function BookingPanel() {
                   <div className="rounded-lg border border-line p-2.5 bg-zinc-50 text-[11px] text-mute space-y-1">
                     <div className="flex items-center justify-between font-medium text-ink">
                       <span>Member Loyalty Card</span>
-                      <span className="font-mono">{currentUser ? `${loyalty.completed} / 10 Games` : "Members Only"}</span>
+                      <span className="font-mono">{currentUser ? `${loyalty.completed} / 10 Games` : "Free Member Perk"}</span>
                     </div>
                     {currentUser ? (
                       <p className="text-[10px]">
                         {loyalty.eligible
-                          ? "🎉 Reward active: 50% off up to 2 court-hours (2 hrs / 2 courts) on your next booking!"
-                          : `Play ${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} to get 50% off up to 2 courts / 2 hours on booking #${loyalty.rewardBookingNumber}!`}
+                          ? "Reward active: 50% off up to 2 court-hours (2 hrs / 2 courts) on your next booking."
+                          : `Play ${loyalty.remaining} more confirmed game${loyalty.remaining === 1 ? "" : "s"} to get 50% off up to 2 courts / 2 hours on booking #${loyalty.rewardBookingNumber}.`}
                       </p>
                     ) : (
                       <p className="text-[10px] text-mute">
-                        <a href="/member" className="text-wine font-medium underline">
-                          Sign in
-                        </a>{" "}
+                        <button
+                          type="button"
+                          onClick={() => setAuthMode("signup")}
+                          className="text-wine font-medium underline cursor-pointer"
+                        >
+                          Join Free (15s)
+                        </button>{" "}
+                        or{" "}
+                        <button
+                          type="button"
+                          onClick={() => setAuthMode("signin")}
+                          className="text-ink font-medium underline cursor-pointer"
+                        >
+                          Sign In
+                        </button>{" "}
                         to count this game toward 50% off (2 hrs / 2 courts) every 10 games.
                       </p>
                     )}
@@ -783,7 +849,18 @@ export function BookingPanel() {
 
                 {/* Contact Details Card */}
                 <div className="rounded-2xl border border-line bg-zinc-50/70 p-5 space-y-3">
-                  <p className={eyebrow}>Contact Details</p>
+                  <div className="flex items-center justify-between">
+                    <p className={eyebrow}>Contact Details</p>
+                    {!currentUser && (
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode("signup")}
+                        className="font-mono text-[10px] uppercase tracking-wider text-wine underline hover:opacity-75 cursor-pointer"
+                      >
+                        + Join Free to Track Loyalty
+                      </button>
+                    )}
+                  </div>
                   <div>
                     <label className={label} htmlFor="v-name">Full Name</label>
                     <input
@@ -947,10 +1024,13 @@ export function BookingPanel() {
                     </div>
                   </div>
 
-                  {/* Red Warning Callout (from Velocity inspo) */}
+                  {/* Red Warning Callout */}
                   <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3.5 text-xs text-rose-800 space-y-1">
-                    <p className="font-semibold flex items-center gap-1.5">
-                      <span>⚠️</span> Paying is not enough!
+                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] font-semibold flex items-center gap-1.5 text-rose-900">
+                      <svg className="size-3.5 stroke-[1.75] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                      </svg>
+                      <span>Important · Receipt Required</span>
                     </p>
                     <p className="text-[11px] leading-relaxed text-rose-700">
                       Your court slot is <strong>not reserved</strong> until you upload your transfer receipt and tap <strong>Confirm Reservation</strong> below.
@@ -1312,6 +1392,17 @@ export function BookingPanel() {
           </div>
         </div>
       )}
+
+      {/* Inline Member AuthModal so guests don't lose their selected slots */}
+      <AuthModal
+        isOpen={authMode !== null}
+        initialMode={authMode ?? "signup"}
+        onClose={() => setAuthMode(null)}
+        onSuccess={() => {
+          setAuthMode(null);
+          setRefresh((k) => k + 1);
+        }}
+      />
     </div>
   );
 }

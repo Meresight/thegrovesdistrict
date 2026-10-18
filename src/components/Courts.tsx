@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { courts } from "@/lib/config";
 import { useClubSettings } from "@/lib/useClubSettings";
-import { btnPrimary, eyebrow } from "./ui";
+import { btnGhost, btnPrimary, eyebrow } from "./ui";
 
 export function Courts() {
   const settings = useClubSettings();
@@ -12,7 +12,7 @@ export function Courts() {
     <section id="courts" className="scroll-mt-16 border-t border-line">
       <div className="grid md:grid-cols-[1fr_2.2fr]">
         <div className="p-6 md:border-r md:border-line md:p-8">
-          <p className={eyebrow}>(03) The Courts</p>
+          <p className={eyebrow}>(02) The Courts</p>
         </div>
         <div className="flex flex-col justify-between gap-8 p-6 md:p-12">
           <div>
@@ -76,16 +76,51 @@ export function Courts() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-white p-6">
-            <div>
-              <h4 className="text-sm font-medium">Ready to reserve a court?</h4>
-              <p className="text-xs text-mute mt-0.5">
-                Select your court, pick your hours, and confirm in seconds.
-              </p>
+          {/* Dual Reservation Strip: Single Court vs. Full Facility / Tournament */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col justify-between gap-4 rounded-2xl border border-line bg-white p-6">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute">
+                  Single or Multiple Courts
+                </p>
+                <h4 className="mt-1 text-base font-medium text-ink">
+                  Reserve a Court for Your Group
+                </h4>
+                <p className="text-xs text-mute mt-1 leading-relaxed">
+                  Pick Court 1, 2, or 3 and choose your hours on our live schedule matrix.
+                </p>
+              </div>
+              <div>
+                <Link href="/book" className={btnPrimary}>
+                  Select Court & Reserve →
+                </Link>
+              </div>
             </div>
-            <Link href="/book" className={btnPrimary}>
-              Select Court & Reserve →
-            </Link>
+
+            <div className="flex flex-col justify-between gap-4 rounded-2xl border border-line bg-zinc-50/70 p-6">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-wine font-semibold">
+                    All 3 Courts · Private Event
+                  </p>
+                  <span className="font-mono text-[11px] font-semibold text-ink">
+                    From {settings.currencySymbol}
+                    {settings.eventHourlyRate}/hr
+                  </span>
+                </div>
+                <h4 className="mt-1 text-base font-medium text-ink">
+                  Full Facility & Tournament Buyout
+                </h4>
+                <p className="text-xs text-mute mt-1 leading-relaxed">
+                  Lock all 3 courts together for pickleball tournaments, corporate team-building, or private celebrations.
+                </p>
+              </div>
+              <div>
+                <Link href="/book?mode=event" className={btnGhost}>
+                  Book Full Facility / Event →
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

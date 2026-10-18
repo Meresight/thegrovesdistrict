@@ -2,14 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
+import { useState } from "react";
 import { AuthModal } from "./AuthModal";
 import { useMember, signOutMember } from "@/lib/use-member";
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | null>(null);
   const { user } = useMember();
 
   const linkCls = "text-[13px] text-ink transition hover:opacity-60";
@@ -18,13 +17,19 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur-md">
         <div className="grid h-[64px] grid-cols-[1fr_auto_1fr] items-center px-6 md:px-10">
-          {/* Left: Essential navigation only (Courts & Café) */}
-          <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
+          {/* Left: Primary Navigation */}
+          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
             <Link href="/#courts" className={linkCls}>
               Courts
             </Link>
+            <Link href="/#membership" className={linkCls}>
+              Member Perks
+            </Link>
             <Link href="/#cafe" className={linkCls}>
               Café
+            </Link>
+            <Link href="/#contact" className={linkCls}>
+              Location
             </Link>
           </nav>
 
@@ -61,19 +66,22 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Right: Log In & Book a Court CTA */}
-          <div className="flex items-center gap-3 justify-self-end">
+          {/* Right: Member Auth & Book a Court CTA */}
+          <div className="flex items-center gap-2.5 justify-self-end">
             {user ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/member"
-                  className="hidden text-xs text-mute hover:text-ink sm:inline font-mono"
+                  className="hidden text-xs text-mute hover:text-ink lg:inline font-mono"
                 >
-                  {user.email?.split("@")[0]} <span className="text-[10px] text-lime font-medium bg-ink px-1.5 py-0.5 rounded ml-1">MEMBER</span>
+                  {user.email?.split("@")[0]}{" "}
+                  <span className="text-[10px] text-white font-medium bg-ink px-1.5 py-0.5 rounded ml-1">
+                    MEMBER
+                  </span>
                 </Link>
                 <Link
                   href="/member"
-                  className="rounded-full border border-line bg-white px-3 py-1 text-xs text-ink hover:border-ink transition"
+                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink transition"
                 >
                   My Games
                 </Link>
@@ -82,19 +90,29 @@ export function Header() {
                   onClick={async () => {
                     await signOutMember();
                   }}
-                  className="hidden sm:inline text-xs text-mute hover:text-ink transition px-1.5 py-1"
+                  className="hidden sm:inline text-xs text-mute hover:text-ink transition px-1.5 py-1 cursor-pointer"
                   title="Sign out of member account"
                 >
                   Sign Out
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setShowAuth(true)}
-                className="text-xs font-semibold text-ink transition hover:opacity-70 px-2 py-1"
-              >
-                Log In
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode("signup")}
+                  className="hidden sm:inline-flex rounded-full border border-line bg-zinc-50 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-ink cursor-pointer"
+                >
+                  Join Free
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode("signin")}
+                  className="text-xs font-semibold text-ink transition hover:opacity-70 px-2 py-1 cursor-pointer"
+                >
+                  Log In
+                </button>
+              </div>
             )}
 
             <Link
@@ -106,7 +124,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile slide menu with customer-only links */}
+        {/* Mobile slide menu */}
         {open && (
           <nav
             id="mobile-menu"
@@ -116,8 +134,8 @@ export function Header() {
             <Link href="/#courts" onClick={() => setOpen(false)} className="py-2.5 text-sm text-ink font-medium">
               Courts
             </Link>
-            <Link href="/#ways-to-play" onClick={() => setOpen(false)} className="py-2.5 text-sm text-ink font-medium">
-              Ways to Play
+            <Link href="/#membership" onClick={() => setOpen(false)} className="py-2.5 text-sm text-ink font-medium">
+              Member Club (50% Off Perk)
             </Link>
             <Link href="/#cafe" onClick={() => setOpen(false)} className="py-2.5 text-sm text-ink font-medium">
               Café
@@ -129,19 +147,32 @@ export function Header() {
               FAQ
             </Link>
             <Link href="/#contact" onClick={() => setOpen(false)} className="py-2.5 text-sm text-ink font-medium">
-              Contact
+              Location & Contact
             </Link>
             <div className="pt-3 border-t border-line/60 flex flex-col gap-2">
               {!user ? (
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    setShowAuth(true);
-                  }}
-                  className="py-2.5 text-left text-sm font-semibold text-ink"
-                >
-                  Log In to Member Account →
-                </button>
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setAuthMode("signup");
+                    }}
+                    className="flex-1 rounded-full bg-ink py-2.5 text-center text-xs font-semibold text-white"
+                  >
+                    Join Member Club — Free
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      setAuthMode("signin");
+                    }}
+                    className="flex-1 rounded-full border border-line py-2.5 text-center text-xs font-semibold text-ink"
+                  >
+                    Sign In
+                  </button>
+                </div>
               ) : (
                 <div className="flex items-center justify-between py-2 text-xs text-mute">
                   <Link
@@ -149,7 +180,7 @@ export function Header() {
                     onClick={() => setOpen(false)}
                     className="font-medium text-ink underline"
                   >
-                    View My Member Dashboard →
+                    View My Member Pass →
                   </Link>
                   <button
                     type="button"
@@ -168,7 +199,11 @@ export function Header() {
         )}
       </header>
 
-      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
+      <AuthModal
+        isOpen={authMode !== null}
+        initialMode={authMode ?? "signup"}
+        onClose={() => setAuthMode(null)}
+      />
     </>
   );
 }

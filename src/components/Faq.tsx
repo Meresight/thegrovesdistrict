@@ -6,7 +6,7 @@ export function Faq() {
     <section id="faq" className="scroll-mt-16 border-t border-line">
       <div className="grid md:grid-cols-[1fr_2.2fr]">
         <div className="p-6 md:border-r md:border-line md:p-8">
-          <p className={eyebrow}>(07) FAQ</p>
+          <p className={eyebrow}>(06) FAQ</p>
         </div>
         <div>
           {faqs.map((f) => (

@@ -30,14 +30,7 @@ export default function BookPage() {
               Court Reservations
             </h1>
             <p className="mt-2 text-xs md:text-sm text-mute leading-relaxed">
-              Strict No-Cancellation Policy · All bookings are final once confirmed.
-            </p>
-            <p className="mt-1 text-xs text-mute">
-              Member?{" "}
-              <Link href="/member" className="text-wine font-medium underline hover:opacity-80">
-                Sign in to your Member Account
-              </Link>{" "}
-              to track games toward 50% off.
+              Select a single court for hourly play or lock all 3 courts for a private event / tournament · Strict No-Cancellation Policy.
             </p>
           </div>
 

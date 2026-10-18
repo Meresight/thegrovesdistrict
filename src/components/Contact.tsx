@@ -12,7 +12,7 @@ export function Contact() {
       <div className="grid md:grid-cols-2">
         <div className="flex flex-col justify-between gap-8 p-6 md:p-10">
           <div>
-            <p className={eyebrow}>(08) Location & Contact</p>
+            <p className={eyebrow}>(07) Location & Contact</p>
             <h2 className="mt-3 text-[1.65rem] leading-[1.1] tracking-[-0.03em] md:text-[2.4rem]">
               Find us & say hello.
             </h2>
@@ -30,9 +30,13 @@ export function Contact() {
                   href={site.mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={btnGhost}
+                  className={`${btnGhost} inline-flex items-center gap-2`}
                 >
-                  📍 Get Directions on Google Maps ↗
+                  <svg className="size-3.5 stroke-[1.6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                  <span>Get Directions on Google Maps ↗</span>
                 </a>
               </div>
               <div className="grid gap-1 pt-3">

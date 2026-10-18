@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useClubSettings } from "@/lib/useClubSettings";
+import { useMember } from "@/lib/use-member";
+import { AuthModal } from "./AuthModal";
 import { btnGhost, btnPrimary, pill } from "./ui";
 
 const photos = [
@@ -25,6 +28,8 @@ const photos = [
 
 export function Hero() {
   const settings = useClubSettings();
+  const { user } = useMember();
+  const [showSignup, setShowSignup] = useState(false);
 
   return (
     <section>
@@ -57,9 +62,19 @@ export function Hero() {
             <Link href="/book" className={`${btnPrimary} px-6 py-3 text-sm`}>
               Book a Court →
             </Link>
-            <a href="#ways-to-play" className={`${btnGhost} px-6 py-3 text-sm`}>
-              Ways to Play & Member Perks
-            </a>
+            {user ? (
+              <Link href="/member" className={`${btnGhost} px-6 py-3 text-sm`}>
+                My Member Pass ({settings.memberDiscountPercent}% Perk)
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowSignup(true)}
+                className={`${btnGhost} px-6 py-3 text-sm cursor-pointer`}
+              >
+                Join Member Club — Free
+              </button>
+            )}
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-mute font-mono">
@@ -71,27 +86,30 @@ export function Hero() {
               {settings.regularHourlyRate} Peak
             </span>
             <span className="text-zinc-300">·</span>
-            <span className="text-ink font-medium">
-              {settings.memberDiscountPercent}% Off 2 Courts / 2 Hrs Every 10 Games
-            </span>
+            <a href="#membership" className="text-ink font-medium underline underline-offset-4 hover:text-wine transition">
+              Members: {settings.memberDiscountPercent}% Off 2 Courts / 2 Hrs
+            </a>
           </div>
         </div>
       </div>
 
       {/* Quick Directory Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line px-6 py-4 md:px-10">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a href="#courts" className={pill}>
             Courts
           </a>
-          <a href="#ways-to-play" className={pill}>
-            Ways to Play
+          <a href="#membership" className={pill}>
+            Member Club (Free)
           </a>
           <a href="#cafe" className={pill}>
             Café
           </a>
           <a href="#events" className={pill}>
             Events
+          </a>
+          <a href="#contact" className={pill}>
+            Location
           </a>
         </div>
         <p className="order-last w-full text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-ink/70 md:order-none md:w-auto">
@@ -125,6 +143,12 @@ export function Hero() {
           </div>
         ))}
       </div>
+
+      <AuthModal
+        isOpen={showSignup}
+        initialMode="signup"
+        onClose={() => setShowSignup(false)}
+      />
     </section>
   );
 }

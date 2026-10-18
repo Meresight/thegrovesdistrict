@@ -7,7 +7,6 @@ import { Faq } from "@/components/Faq";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
-import { Join } from "@/components/Join";
 import { PlayerReviews } from "@/components/PlayerReviews";
 import { WaysToPlay } from "@/components/WaysToPlay";
 import { site } from "@/lib/config";
@@ -39,12 +38,11 @@ export default function Home() {
         <main>
           <Hero />
           <About />
-          <WaysToPlay />
           <Courts />
+          <WaysToPlay />
           <Cafe />
           <Events />
           <PlayerReviews />
-          <Join />
           <Faq />
           <Contact />
         </main>
