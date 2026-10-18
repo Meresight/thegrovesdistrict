@@ -477,9 +477,43 @@ export function BookingPanel() {
         </div>
       </div>
 
+      {/* Stepper Navigation */}
+      <div className="flex items-center justify-between px-5 md:px-6 py-2.5 border-b border-line bg-white text-[11px] font-mono tracking-wider">
+        <div className="flex items-center gap-3">
+          <span className={step === "schedule" ? "text-ink font-semibold flex items-center gap-1.5" : "text-mute flex items-center gap-1.5"}>
+            <span className={`size-4 rounded-full flex items-center justify-center text-[10px] ${step === "schedule" ? "bg-ink text-white" : "border border-line text-mute"}`}>
+              1
+            </span>
+            SCHEDULE
+          </span>
+          <span className="text-line">/</span>
+          <span className={step === "checkout" ? "text-ink font-semibold flex items-center gap-1.5" : "text-mute flex items-center gap-1.5"}>
+            <span className={`size-4 rounded-full flex items-center justify-center text-[10px] ${step === "checkout" ? "bg-ink text-white" : "border border-line text-mute"}`}>
+              2
+            </span>
+            CHECKOUT
+          </span>
+        </div>
+        {step === "checkout" ? (
+          <button
+            type="button"
+            onClick={() => setStep("schedule")}
+            className="text-mute hover:text-ink transition flex items-center gap-1 cursor-pointer"
+          >
+            ← Back to Schedule
+          </button>
+        ) : (
+          <span className="text-mute text-[10px] hidden sm:inline">
+            {selectedSlots.length === 0
+              ? "Select court slots below"
+              : `${selectedSlots.length} slot${selectedSlots.length > 1 ? "s" : ""} selected`}
+          </span>
+        )}
+      </div>
+
       {/* ================= STEP 1: CALENDAR & MULTI-COURT SCHEDULE ================= */}
       {step === "schedule" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr_320px] divide-y lg:divide-y-0 lg:divide-x divide-line">
+        <div className={`grid grid-cols-1 lg:grid-cols-[340px_1fr_320px] divide-y lg:divide-y-0 lg:divide-x divide-line ${selectedSlots.length > 0 ? "pb-20 lg:pb-0" : ""}`}>
           {/* Column 1: Month Calendar Picker */}
           <div className="p-5 md:p-6 space-y-5 bg-white">
             <div>
@@ -704,6 +738,26 @@ export function BookingPanel() {
               </table>
             </div>
 
+            {/* Table Status Legend */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-mono text-mute pt-1">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded border border-line bg-white inline-block"></span>
+                <span>Available</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded bg-ink inline-block"></span>
+                <span className="text-ink font-semibold">Selected</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded border border-amber-300 bg-amber-50 inline-block"></span>
+                <span className="text-amber-800">Held (Verification Pending)</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded bg-zinc-200 inline-block"></span>
+                <span>Booked</span>
+              </span>
+            </div>
+
             {notice && <p className="text-xs text-mute">{notice}</p>}
             {error && <p className="text-xs text-wine font-medium">{error}</p>}
           </div>
@@ -839,20 +893,58 @@ export function BookingPanel() {
               <div className="space-y-5">
                 <h2 className="text-2xl font-bold tracking-tight text-ink">Booking Summary</h2>
 
-                {/* Contact Details Card */}
-                <div className="rounded-2xl border border-line bg-zinc-50/70 p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className={eyebrow}>Contact Details</p>
-                    {!currentUser && (
+                {/* Member Club Card / Status */}
+                {!currentUser ? (
+                  <div className="rounded-2xl border border-line bg-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.16em] bg-zinc-100 text-ink px-1.5 py-0.5 rounded border border-line font-semibold">
+                          Member Club
+                        </span>
+                        <span className="text-xs font-semibold text-ink">
+                          Track loyalty on this booking
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-mute">
+                        Count this game toward 50% off every 10 games. Free forever.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => setAuthMode("signup")}
-                        className="font-mono text-[10px] uppercase tracking-wider text-wine underline hover:opacity-75 cursor-pointer"
+                        className="rounded-full bg-ink text-white px-3.5 py-1.5 text-xs font-medium hover:bg-black transition cursor-pointer"
                       >
-                        + Join Free to Track Loyalty
+                        Join Free
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode("signin")}
+                        className="rounded-full border border-line bg-white text-ink px-3.5 py-1.5 text-xs font-medium hover:border-ink transition cursor-pointer"
+                      >
+                        Sign In
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <div className="rounded-2xl border border-line bg-white p-4 flex items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.16em] bg-ink text-white px-2 py-0.5 rounded font-semibold shrink-0">
+                        Member Active
+                      </span>
+                      <span className="font-mono text-xs text-ink truncate">
+                        {currentUser.email}
+                      </span>
+                    </div>
+                    <span className="font-mono text-xs text-emerald-700 font-semibold shrink-0">
+                      {loyalty.eligible ? "50% Off Ready" : `${loyalty.completed} / 10 Games`}
+                    </span>
+                  </div>
+                )}
+
+                {/* Contact Details Card */}
+                <div className="rounded-2xl border border-line bg-zinc-50/70 p-5 space-y-3">
+                  <p className={eyebrow}>Player Contact Information</p>
                   <div>
                     <label className={label} htmlFor="v-name">Full Name</label>
                     <input
@@ -1382,6 +1474,30 @@ export function BookingPanel() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Mobile Sticky Selection & Review Bar */}
+      {step === "schedule" && selectedSlots.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t border-line px-5 py-3.5 z-40 lg:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.06)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-150">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-mute">
+              {selectedSlots.length} Court Slot{selectedSlots.length > 1 ? "s" : ""}
+            </p>
+            <p className="font-mono text-base font-bold text-ink">
+              {settings.currencySymbol}{finalTotal}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setStep("checkout");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="rounded-full bg-ink text-white px-5 py-2.5 text-xs font-semibold hover:bg-black transition cursor-pointer shadow-sm shrink-0"
+          >
+            Review Booking →
+          </button>
         </div>
       )}
 

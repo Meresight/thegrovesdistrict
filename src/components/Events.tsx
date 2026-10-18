@@ -81,7 +81,7 @@ export async function Events() {
                 href="/book"
                 className="rounded-full bg-ink text-white px-3.5 py-1 text-[11px] font-semibold hover:bg-black transition whitespace-nowrap shadow-2xs"
               >
-                Join Rally →
+                Book Court →
               </Link>
             </div>
           </li>

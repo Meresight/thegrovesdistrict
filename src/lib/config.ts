@@ -109,6 +109,10 @@ export const faqs = [
     a: "Yes, the Courtside Café is located right beside the courts, offering specialty espresso, cold brew, electrolytes, and cold drinks.",
   },
   {
+    q: "How does the Free Member Club and 50% reward work?",
+    a: "Signing up as a member is completely free with no monthly subscription. Every confirmed court-hour booked under your member email automatically earns 1 stamp. After 10 confirmed hours, your 11th booking automatically unlocks 50% off up to 2 courts or 2 hours at checkout.",
+  },
+  {
     q: "Can I host a private event or tournament buyout?",
     a: "Yes. You can reserve all 3 courts for corporate events, private tournaments, or celebrations directly through our facility buyout option.",
   },

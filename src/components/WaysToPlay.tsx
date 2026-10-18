@@ -43,18 +43,18 @@ export function WaysToPlay() {
   const steps = [
     {
       num: "01",
-      title: "Create Your Free Member Account",
-      desc: "Register with your name and email. Free club membership with no monthly dues or commitments.",
+      title: "Free Club Membership",
+      desc: "Register in seconds with your name and email. No monthly dues, no renewal fees, no commitments.",
     },
     {
       num: "02",
-      title: "1 Confirmed Court-Hour = 1 Loyalty Stamp",
-      desc: "Every confirmed court-hour you book while signed in automatically adds a stamp to your digital Member Pass.",
+      title: "Automatic Stamp Tracking",
+      desc: "Every confirmed court-hour booked under your member email automatically earns 1 stamp on your pass.",
     },
     {
       num: "03",
-      title: `${settings.memberDiscountPercent}% Off Up to 2 Courts (2 Hours)`,
-      desc: `Once you reach 10 confirmed games, your 11th booking automatically unlocks ${settings.memberDiscountPercent}% off up to 2 court-hours at checkout. Repeats every 10 games.`,
+      title: `${settings.memberDiscountPercent}% Reward on 11th Game`,
+      desc: `Reach 10 confirmed hours, and your 11th booking unlocks ${settings.memberDiscountPercent}% off up to 2 courts / 2 hours at checkout. Cycles every 10 games.`,
     },
   ];
 

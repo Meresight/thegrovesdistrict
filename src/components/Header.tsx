@@ -18,15 +18,21 @@ export function Header() {
       <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur-md">
         <div className="grid h-[64px] grid-cols-[1fr_auto_1fr] items-center px-6 md:px-10">
           {/* Left: Primary Navigation */}
-          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
+          <nav className="hidden items-center gap-5 lg:gap-7 md:flex" aria-label="Primary">
             <Link href="/#courts" className={linkCls}>
               Courts
             </Link>
             <Link href="/#membership" className={linkCls}>
-              Member Perks
+              Member Club
             </Link>
             <Link href="/#cafe" className={linkCls}>
               Café
+            </Link>
+            <Link href="/#events" className={linkCls}>
+              Events
+            </Link>
+            <Link href="/#faq" className={linkCls}>
+              FAQ
             </Link>
             <Link href="/#contact" className={linkCls}>
               Location
@@ -81,7 +87,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/member"
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink transition"
+                  className="hidden sm:inline-flex rounded-full border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink transition"
                 >
                   My Games
                 </Link>
@@ -108,7 +114,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setAuthMode("signin")}
-                  className="text-xs font-semibold text-ink transition hover:opacity-70 px-2 py-1 cursor-pointer"
+                  className="hidden sm:inline-flex text-xs font-semibold text-ink transition hover:opacity-70 px-2 py-1 cursor-pointer"
                 >
                   Log In
                 </button>
