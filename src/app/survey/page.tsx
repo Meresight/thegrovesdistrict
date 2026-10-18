@@ -171,12 +171,12 @@ function SurveyContent() {
 
           {submitted ? (
             <div className={`${card} p-8 text-center space-y-4`}>
-              <div className="mx-auto size-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
-                ★
+              <div className="mx-auto size-12 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg">
+                ✓
               </div>
               <h2 className="text-xl font-medium text-ink">Thank you for your feedback!</h2>
               <p className="text-sm text-mute max-w-md mx-auto leading-relaxed">
-                Your 5-star rating for Booking{" "}
+                Your feedback for Booking{" "}
                 <strong className="font-mono text-ink">#{selectedBooking?.bookingRef}</strong> has been sent directly to the Grove District team.
               </p>
               <div className="pt-3 flex flex-wrap justify-center gap-3">
@@ -301,7 +301,7 @@ function SurveyContent() {
                           : "bg-zinc-100 text-zinc-700"
                       }`}
                     >
-                      {selectedBooking.isMember ? "★ Club Member" : "Guest Player"}
+                      {selectedBooking.isMember ? "Club Member" : "Guest Player"}
                     </span>
                   </div>
 
@@ -381,7 +381,7 @@ function SurveyContent() {
                         disabled={submitting}
                         className={`${btnPrimary} w-full py-3`}
                       >
-                        {submitting ? "Submitting Review…" : "Submit 5-Star Feedback ★"}
+                        {submitting ? "Submitting Feedback…" : "Submit Feedback"}
                       </button>
                     </form>
                   )}

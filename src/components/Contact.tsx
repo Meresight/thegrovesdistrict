@@ -22,8 +22,8 @@ export function Contact() {
                   {l}
                 </span>
               ))}
-              <span className="text-emerald-800 font-medium text-xs pt-0.5">
-                ✓ Free on-site parking available · Open daily 8:00 AM – 2:00 AM
+              <span className="font-mono text-[11px] uppercase tracking-wider text-mute pt-1">
+                Free On-Site Parking · Open Daily 8:00 AM – 2:00 AM
               </span>
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <a

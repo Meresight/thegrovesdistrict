@@ -66,7 +66,7 @@ export function PlayerReviews() {
       <div>
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="max-w-xl">
-            <p className={eyebrow}>(07) Player Reviews · Verified Post-Game Feedback</p>
+            <p className={eyebrow}>Player Reviews · Verified Post-Game Feedback</p>
             <h2 className={`${h2} mt-3`}>Rated by players after their match.</h2>
             <p className="mt-3 text-sm text-mute leading-relaxed">
               Verified reviews from Club Members and guests rating our hospitality, indoor courts, and Courtside Café after their scheduled games.
@@ -115,7 +115,7 @@ export function PlayerReviews() {
                 <div className="flex items-center justify-between gap-2 mb-3">
                   {renderStars(item.overall)}
                   <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700">
-                    {item.isMember ? "★ Member" : "Verified Guest"}
+                    {item.isMember ? "Club Member" : "Verified Guest"}
                   </span>
                 </div>
 

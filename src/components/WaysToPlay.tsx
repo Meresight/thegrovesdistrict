@@ -44,7 +44,7 @@ export function WaysToPlay() {
     {
       num: "01",
       title: "Create Your Free Member Account",
-      desc: "Sign up with your email in 15 seconds. No membership fees, no monthly dues, and no commitments.",
+      desc: "Register with your name and email. Free club membership with no monthly dues or commitments.",
     },
     {
       num: "02",
@@ -82,10 +82,9 @@ export function WaysToPlay() {
           {/* Editorial Headline & Visual Loyalty Pass */}
           <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] items-start">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-line bg-zinc-50 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-ink">
-                <span className="size-1.5 rounded-full bg-wine" />
-                <span>Free Club Membership · {settings.memberDiscountPercent}% Loyalty Perk</span>
-              </div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-mute">
+                Free Club Membership · Loyalty Pass
+              </p>
 
               <h2 className="text-[1.75rem] leading-[1.08] tracking-[-0.03em] md:text-[2.65rem] text-ink">
                 Play 10 hours.
@@ -146,7 +145,7 @@ export function WaysToPlay() {
                   </h3>
                 </div>
                 <span className="rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white">
-                  {user ? `${loyalty.completed} / 10 Stamps` : "Free Pass"}
+                  {user ? `${loyalty.completed} / 10 Games` : "0 / 10 Games"}
                 </span>
               </div>
 
@@ -154,21 +153,21 @@ export function WaysToPlay() {
               <div className="grid grid-cols-5 gap-2.5">
                 {Array.from({ length: 10 }).map((_, idx) => {
                   const num = idx + 1;
-                  const active = user ? num <= loyalty.completed : num <= 3;
+                  const active = user ? num <= loyalty.completed : false;
                   return (
                     <div
                       key={num}
                       className={`aspect-square rounded-xl border flex flex-col items-center justify-center transition ${
                         active
                           ? "border-white bg-white text-ink"
-                          : "border-white/15 bg-white/5 text-white/40"
+                          : "border-white/15 bg-white/5 text-white/50"
                       }`}
                     >
                       <span className="font-mono text-[10px] font-semibold">
                         {String(num).padStart(2, "0")}
                       </span>
                       <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5">
-                        {active ? "Stamped" : "Hour"}
+                        {active ? "Played" : "Game"}
                       </span>
                     </div>
                   );

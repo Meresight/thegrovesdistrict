@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { courts } from "@/lib/config";
 import { formatDateLabel, formatHour } from "@/lib/time";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { btnGhost, btnPrimary, eyebrow } from "@/components/ui";
 import { AuthModal } from "@/components/AuthModal";
 import { supabase } from "@/lib/supabase-browser";
@@ -126,72 +128,80 @@ export default function MemberDashboardPage() {
 
   if (!ready || loading) {
     return (
-      <div className="mx-auto max-w-4xl px-6 py-20 text-center text-xs text-mute font-mono">
-        Loading member dashboard…
+      <div className="mx-auto max-w-[1240px] bg-white min-h-screen flex flex-col justify-between">
+        <Header />
+        <div className="mx-auto max-w-4xl px-6 py-20 text-center text-xs text-mute font-mono">
+          Loading member dashboard…
+        </div>
+        <Footer />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-xl px-6 py-20 space-y-6">
-        <div className="rounded-2xl border border-line bg-white p-8 shadow-2xs text-center space-y-4">
-          <p className={eyebrow}>Grove District Member Club</p>
-          <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-ink">
-            Join Free or Sign In to Your Pass
-          </h1>
-          <p className="text-xs md:text-sm text-mute leading-relaxed max-w-md mx-auto">
-            {errorMsg ||
-              "Create a free member account in 15 seconds to track your confirmed court games. Every 10 confirmed games unlocks 50% off up to 2 courts / 2 hours on your next booking."}
-          </p>
+      <div className="mx-auto max-w-[1240px] bg-white min-h-screen flex flex-col justify-between">
+        <Header />
+        <div className="mx-auto max-w-xl px-6 py-16 md:py-24 space-y-6">
+          <div className="rounded-2xl border border-line bg-white p-8 shadow-2xs text-center space-y-4">
+            <p className={eyebrow}>Grove District Member Club</p>
+            <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-ink">
+              Join Free or Sign In to Your Pass
+            </h1>
+            <p className="text-xs md:text-sm text-mute leading-relaxed max-w-md mx-auto">
+              {errorMsg ||
+                "Create a free member account to view your court reservations and track your confirmed court hours toward 50% off."}
+            </p>
 
-          <div className="rounded-xl border border-line bg-zinc-50/70 p-4 text-left space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">
-                Member Loyalty Pass
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">
-                Free Forever · ₱0
-              </span>
+            <div className="rounded-xl border border-line bg-zinc-50/70 p-4 text-left space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">
+                  Member Loyalty Pass
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink font-semibold">
+                  10 Games = 50% Off
+                </span>
+              </div>
+              <p className="text-xs font-medium text-ink">
+                Play 10 Confirmed Games → Get 50% Off Up to 2 Courts / 2 Hours
+              </p>
+              <p className="text-[11px] text-mute">
+                Past guest bookings made with the same email address are automatically linked to your account.
+              </p>
             </div>
-            <p className="text-xs font-medium text-ink">
-              Play 10 Confirmed Games → Get 50% Off Up to 2 Courts / 2 Hours
-            </p>
-            <p className="text-[11px] text-mute">
-              Past guest bookings made with the same email address are automatically linked to your account.
-            </p>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setAuthMode("signup")}
+                className={`${btnPrimary} text-xs py-2.5 px-5 cursor-pointer`}
+              >
+                Join as a Member — Free →
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode("signin")}
+                className={`${btnGhost} text-xs py-2.5 px-5 cursor-pointer`}
+              >
+                Sign In
+              </button>
+              <Link href="/book" className="text-xs font-mono uppercase tracking-wider text-mute hover:text-ink px-3 py-2">
+                Book a Court →
+              </Link>
+            </div>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setAuthMode("signup")}
-              className={`${btnPrimary} text-xs py-2.5 px-5 cursor-pointer`}
-            >
-              Join as a Member — Free →
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMode("signin")}
-              className={`${btnGhost} text-xs py-2.5 px-5 cursor-pointer`}
-            >
-              Sign In
-            </button>
-            <Link href="/book" className="text-xs font-mono uppercase tracking-wider text-mute hover:text-ink px-3 py-2">
-              Book a Court →
-            </Link>
-          </div>
+          <AuthModal
+            isOpen={authMode !== null}
+            initialMode={authMode ?? "signup"}
+            onClose={() => setAuthMode(null)}
+            onSuccess={() => {
+              setAuthMode(null);
+              setReloadTrigger((n) => n + 1);
+            }}
+          />
         </div>
-
-        <AuthModal
-          isOpen={authMode !== null}
-          initialMode={authMode ?? "signup"}
-          onClose={() => setAuthMode(null)}
-          onSuccess={() => {
-            setAuthMode(null);
-            setReloadTrigger((n) => n + 1);
-          }}
-        />
+        <Footer />
       </div>
     );
   }
@@ -203,7 +213,10 @@ export default function MemberDashboardPage() {
   const nextGame = upcomingReservations[0] || null;
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12 space-y-8">
+    <div className="mx-auto max-w-[1240px] bg-white min-h-screen flex flex-col justify-between">
+      <div>
+        <Header />
+        <div className="mx-auto max-w-4xl px-6 py-12 space-y-8">
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-line">
         <div>
@@ -443,6 +456,9 @@ export default function MemberDashboardPage() {
           setReloadTrigger((n) => n + 1);
         }}
       />
+        </div>
+      </div>
+      <Footer />
     </div>
   );
 }

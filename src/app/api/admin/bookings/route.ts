@@ -89,24 +89,30 @@ export async function POST(req: NextRequest) {
   const notes = body.notes?.trim() || "Counter Walk-in / Cash booking";
   const totalPrice = Number(body.totalPrice) || 0;
   const bookingType = body.bookingType === "event_buyout" ? "event_buyout" : "single";
+  const targetCourts =
+    bookingType === "event_buyout"
+      ? ["court-1", "court-2", "court-3"]
+      : [body.courtId];
 
-  const rows = body.hours.map((h: number) => ({
-    booking_ref: bookingRef,
-    booking_type: bookingType,
-    court_id: body.courtId,
-    play_date: body.date,
-    start_hour: h,
-    name,
-    email,
-    phone,
-    players: 4,
-    notes,
-    total_price: totalPrice,
-    discount_applied: 0,
-    receipt_url: null,
-    waiver_agreed: true,
-    status: "confirmed",
-  }));
+  const rows = body.hours.flatMap((h: number) =>
+    targetCourts.map((cId) => ({
+      booking_ref: bookingRef,
+      booking_type: bookingType,
+      court_id: cId,
+      play_date: body.date,
+      start_hour: h,
+      name,
+      email,
+      phone,
+      players: bookingType === "event_buyout" ? 12 : 4,
+      notes,
+      total_price: totalPrice,
+      discount_applied: 0,
+      receipt_url: null,
+      waiver_agreed: true,
+      status: "confirmed",
+    }))
+  );
 
   const { error } = await db.from("bookings").insert(rows);
   if (error) {

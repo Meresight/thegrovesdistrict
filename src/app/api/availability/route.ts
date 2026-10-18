@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   // Load all active or pending bookings for date
   const { data, error } = await db
     .from("bookings")
-    .select("court_id, start_hour, status, created_at")
+    .select("court_id, booking_type, start_hour, status, created_at")
     .eq("play_date", date)
     .neq("status", "cancelled");
 
@@ -42,14 +42,23 @@ export async function GET(req: NextRequest) {
   const HOLD_LIMIT_MS = 25 * 60 * 1000; // 25-minute auto-release limit for unapproved bookings
 
   for (const row of data ?? []) {
+    const affectedCourts =
+      row.booking_type === "event_buyout"
+        ? ["court-1", "court-2", "court-3"]
+        : [row.court_id];
+
     if (row.status === "confirmed") {
-      (booked[row.court_id] ??= []).push(row.start_hour);
+      for (const cId of affectedCourts) {
+        (booked[cId] ??= []).push(row.start_hour);
+      }
     } else if (row.status === "pending_review") {
       const ageMs = nowMs - new Date(row.created_at).getTime();
       // Only hold the slot if within 25 minutes of submission. After 25 minutes without owner approval, slot returns to available.
       if (ageMs < HOLD_LIMIT_MS) {
-        (pending[row.court_id] ??= []).push(row.start_hour);
-        (booked[row.court_id] ??= []).push(row.start_hour);
+        for (const cId of affectedCourts) {
+          (pending[cId] ??= []).push(row.start_hour);
+          (booked[cId] ??= []).push(row.start_hour);
+        }
       }
     }
   }

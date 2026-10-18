@@ -30,8 +30,8 @@ export function Courts() {
               <div key={c.id} className="rounded-2xl border border-line p-5 transition hover:border-ink bg-white">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono font-medium text-mute uppercase">{c.id}</span>
-                  <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
-                    Open for Booking
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-mute">
+                    20′ × 44′ Indoor
                   </span>
                 </div>
                 <h3 className="mt-2 text-lg font-medium">{c.name}</h3>

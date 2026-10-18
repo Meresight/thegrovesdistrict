@@ -47,31 +47,24 @@ export function MonthCalendar({
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-line bg-white p-5 shadow-2xs">
       {/* Month Header */}
       <div className="flex items-center justify-between pb-4 border-b border-line">
         <div>
           <h3 className="text-sm font-semibold tracking-tight text-ink">{monthTitle}</h3>
-          <p className="text-[10px] text-mute font-mono">Current Month Booking Window</p>
+          <p className="text-[10px] text-mute font-mono uppercase tracking-wider mt-0.5">
+            Select Play Date
+          </p>
         </div>
-        <div className="flex items-center gap-1.5 opacity-40">
+        {selectedDate !== minDate && (
           <button
             type="button"
-            disabled={true}
-            aria-label="Previous month"
-            className="size-7 rounded-full border border-line flex items-center justify-center text-xs text-zinc-300 cursor-not-allowed"
+            onClick={() => onSelectDate(minDate)}
+            className="font-mono text-[10px] uppercase tracking-wider text-ink underline hover:opacity-70 cursor-pointer"
           >
-            ←
+            Today
           </button>
-          <button
-            type="button"
-            disabled={true}
-            aria-label="Next month"
-            className="size-7 rounded-full border border-line flex items-center justify-center text-xs text-zinc-300 cursor-not-allowed"
-          >
-            →
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Weekdays row */}
@@ -108,7 +101,7 @@ export function MonthCalendar({
                 isSelected
                   ? "bg-ink text-white font-semibold shadow-sm"
                   : isAvailable
-                  ? "border border-line bg-zinc-50/60 text-ink hover:border-ink hover:bg-white"
+                  ? "border border-line bg-zinc-50/60 text-ink hover:border-ink hover:bg-white cursor-pointer"
                   : "text-zinc-300 cursor-not-allowed bg-transparent"
               }`}
             >
@@ -116,17 +109,6 @@ export function MonthCalendar({
             </button>
           );
         })}
-      </div>
-
-      <div className="mt-3 flex items-center justify-between pt-3 border-t border-line text-[10px] text-mute">
-        <span>● Active calendar month booking window</span>
-        <button
-          type="button"
-          onClick={() => onSelectDate(minDate)}
-          className="underline hover:text-ink"
-        >
-          Today
-        </button>
       </div>
     </div>
   );

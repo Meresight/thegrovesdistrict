@@ -389,16 +389,16 @@ export function BookingPanel() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-left space-y-1 text-xs">
-            <p className="font-semibold text-amber-950">
-              ★ Save your Reference: <span className="font-mono">#{done.ref}</span>
+          <div className="rounded-2xl border border-line bg-white p-4 text-left space-y-1 text-xs">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mute font-semibold">
+              Booking Reference · <span className="text-ink">#{done.ref}</span>
             </p>
-            <p className="text-[11px] text-amber-900/90 leading-relaxed">
-              After your scheduled game finishes, you can rate our hospitality, courts, and café at{" "}
+            <p className="text-[11px] text-mute leading-relaxed">
+              Save your reference code. After your scheduled game finishes, you can rate our hospitality, courts, and café at{" "}
               <a href={`/survey?ref=${done.ref}`} className="font-medium underline text-ink">
                 /survey?ref={done.ref}
               </a>{" "}
-              (works for both Members and Guests without an account).
+              (works for both Members and Guests).
             </p>
           </div>
 
@@ -442,11 +442,11 @@ export function BookingPanel() {
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2 text-mute">
-            <span className="font-mono text-[10px] uppercase tracking-[0.16em] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-semibold">
-              Member Perk
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink font-semibold">
+              Member Club ·
             </span>
             <span>
-              Join free in 15s to count this booking toward <strong className="text-ink">50% off up to 2 courts / 2 hours</strong> every 10 games.
+              Join for free to count this booking toward <strong className="text-ink">50% off up to 2 courts / 2 hours</strong> every 10 games.
             </span>
           </div>
         )}
@@ -463,7 +463,7 @@ export function BookingPanel() {
                 onClick={() => setAuthMode("signup")}
                 className="rounded-full bg-ink text-white px-3.5 py-1 text-[11px] font-medium hover:bg-black/85 transition cursor-pointer"
               >
-                Join Free (15s)
+                Join Free
               </button>
               <button
                 type="button"
@@ -603,29 +603,23 @@ export function BookingPanel() {
                 </h3>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-mute">
+              <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono text-mute">
                 {isEvent ? (
-                  <span className="flex items-center gap-1.5 font-medium text-ink bg-zinc-100 px-2.5 py-1 rounded-full">
-                    <span className="size-2 rounded-full bg-wine" />
+                  <span className="font-medium text-ink bg-zinc-100 border border-line px-2.5 py-1 rounded-full">
                     {selectedEventType?.label}: {settings.currencySymbol}
                     {activeEventHourlyRate}/hr (All 3 Courts)
                   </span>
                 ) : (
                   <>
-                    <span className="flex items-center gap-1">
-                      <span className="size-2 rounded-full border border-emerald-500 bg-emerald-100" /> 8am–4pm: {settings.currencySymbol}{settings.offPeakHourlyRate ?? booking.defaultOffPeakRate}
+                    <span>
+                      8AM–4PM: <strong className="text-ink">{settings.currencySymbol}{settings.offPeakHourlyRate ?? booking.defaultOffPeakRate}</strong>
                     </span>
-                    <span className="flex items-center gap-1">
-                      <span className="size-2 rounded-full border border-amber-500 bg-amber-100" /> 4pm–2am: {settings.currencySymbol}{settings.regularHourlyRate ?? booking.defaultPeakRate}
+                    <span>·</span>
+                    <span>
+                      4PM–2AM: <strong className="text-ink">{settings.currencySymbol}{settings.regularHourlyRate ?? booking.defaultPeakRate}</strong>
                     </span>
                   </>
                 )}
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full bg-ink" /> Selected
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="size-2 rounded-full bg-zinc-200" /> Booked
-                </span>
               </div>
             </div>
 
@@ -673,8 +667,6 @@ export function BookingPanel() {
                             ? Math.round(activeEventHourlyRate / 3)
                             : getSlotRate(h);
 
-                          const isOffPeak = h >= 8 && h < 16;
-
                           return (
                             <td key={c.id} className="p-1 text-center">
                               {disabled ? (
@@ -691,12 +683,12 @@ export function BookingPanel() {
                                 <button
                                   type="button"
                                   onClick={() => toggleCell(c.id, h)}
-                                  className={`w-full py-2 px-2.5 rounded-lg border font-mono text-[11px] font-semibold transition active:scale-[0.98] ${
+                                  className={`w-full py-2 px-2.5 rounded-lg border font-mono text-[11px] font-medium transition active:scale-[0.98] cursor-pointer ${
                                     isSelected
-                                      ? "bg-ink text-white border-ink shadow-sm"
-                                      : isOffPeak
-                                      ? "bg-emerald-50/70 text-emerald-800 border-emerald-300 hover:bg-emerald-100/70"
-                                      : "bg-amber-50/70 text-amber-900 border-amber-300 hover:bg-amber-100/70"
+                                      ? "bg-ink text-white border-ink font-semibold shadow-2xs"
+                                      : isPending
+                                      ? "bg-amber-50/70 text-amber-900 border-amber-300 hover:border-ink"
+                                      : "bg-white text-ink border-line hover:border-ink hover:bg-zinc-50"
                                   }`}
                                 >
                                   {isSelected ? "SELECTED" : `${settings.currencySymbol}${cellPrice}`}
@@ -782,7 +774,7 @@ export function BookingPanel() {
                   <div className="rounded-lg border border-line p-2.5 bg-zinc-50 text-[11px] text-mute space-y-1">
                     <div className="flex items-center justify-between font-medium text-ink">
                       <span>Member Loyalty Card</span>
-                      <span className="font-mono">{currentUser ? `${loyalty.completed} / 10 Games` : "Free Member Perk"}</span>
+                      <span className="font-mono">{currentUser ? `${loyalty.completed} / 10 Games` : "Member Club"}</span>
                     </div>
                     {currentUser ? (
                       <p className="text-[10px]">
@@ -797,7 +789,7 @@ export function BookingPanel() {
                           onClick={() => setAuthMode("signup")}
                           className="text-wine font-medium underline cursor-pointer"
                         >
-                          Join Free (15s)
+                          Join Free
                         </button>{" "}
                         or{" "}
                         <button

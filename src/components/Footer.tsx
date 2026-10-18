@@ -18,7 +18,7 @@ export function Footer() {
             Book a Court
           </Link>
           <Link href="/survey" className="hover:text-ink transition">
-            Rate Your Game ★
+            Post-Game Survey
           </Link>
           <Link href="/waiver" className="hover:text-ink transition">
             Rules & Safety Waiver

@@ -37,14 +37,9 @@ export function Hero() {
       <div className="grid md:grid-cols-2 items-center">
         {/* Left Column: Bold, Athletic Headline */}
         <div className="rise flex flex-col justify-center p-8 md:p-14 lg:p-16">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-mute">
-              Indoor Pickleball Club · Cebu
-            </span>
-            <span className="rounded-full bg-zinc-100 border border-line px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase text-ink">
-              3 Regulation Courts
-            </span>
-          </div>
+          <p className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-mute">
+            Indoor Pickleball Club · Cebu · 3 Courts
+          </p>
           <h1 className="text-[clamp(2.5rem,5.5vw,4.5rem)] font-medium leading-[1.02] tracking-[-0.035em] text-ink">
             Cebu’s Home for
             <br />
@@ -64,7 +59,7 @@ export function Hero() {
             </Link>
             {user ? (
               <Link href="/member" className={`${btnGhost} px-6 py-3 text-sm`}>
-                My Member Pass ({settings.memberDiscountPercent}% Perk)
+                My Member Pass →
               </Link>
             ) : (
               <button
@@ -100,7 +95,7 @@ export function Hero() {
             Courts
           </a>
           <a href="#membership" className={pill}>
-            Member Club (Free)
+            Member Club
           </a>
           <a href="#cafe" className={pill}>
             Café
